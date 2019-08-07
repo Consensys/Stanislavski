@@ -3,7 +3,7 @@ pow gym environment
 
 Implemenation of a proof of work algorithm powered by wittgenstein that can be run as a GYM environement and used for Reinforcement learning. 
 
-##Dependencies
+## Dependencies
 
 To get started you will need to install some dependencies
 
@@ -25,7 +25,7 @@ gradle clean shadowJar
 
 This will allow you to call and run the Java code from python by creating a set of Jar files that will be . accessed through the pyjnius library.
 
-##Configuring path
+## Configuring path
 
 You need to setup the path to the to the JAR files in your computer in the *pow_env.py* file by changing the path in the jnius_config.set_classpath() :
 
@@ -37,7 +37,7 @@ import jnius_config
   p.init()
 ```
 
-##Setup GYM_POW
+## Setup GYM_POW
 
 Once you have run all the steps above go to the gym_pow folder and run:
 ```
