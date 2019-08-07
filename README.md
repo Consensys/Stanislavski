@@ -39,9 +39,9 @@ import jnius_config
 
 ## Setup GYM_POW
 
-Once you have run all the steps above go to the gym_pow folder and run:
+Once you have run all the steps above go to the root folder where you see the gym_pow folder and run:
 ```
-pip install -e .
+pip3 install -e gym_pow
 ```
 
 Now you can call the environment and use any model you find suitable to train your agent. You can . build your pow_gym environment by using:
