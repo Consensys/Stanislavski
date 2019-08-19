@@ -43,7 +43,8 @@ class PoWEnv(gym.Env):
             print("byzantine node ",self.byz)
             self.p.goNextStep()
             self.p.network().printNetworkLatency() 
-            self.secrete_blocks = 0
+            self.secret_blocks = 0
+            self.miner =[]
 
     def seed(self, seed):
             self.np_random, seed = seeding.np_random(seed)
@@ -54,7 +55,7 @@ class PoWEnv(gym.Env):
             reward = 0
             done = False
             mined = self.byz.mine10ms()
-            self.miner
+            #Mine until you have a valid block
             while (True):
                 self.p.goNextStep()
                 mined = self.byz.mine10ms()
@@ -65,15 +66,21 @@ class PoWEnv(gym.Env):
                 done = True
             elif mined is True:
                 if  action == 0:
-                    self.miner.append(start_private_chain())
+                    self.miner.append(self.start_private_chain())
                     reward = -1
-                elif 1<= action and action <= 3:
+                elif 1<= action and action <= 3 and self.validAction(action):
+                    for i in range(action):
+                        if len(self.miner) >0:
+                            self.miner.pop(0)
                     reward = action*self.full_block
-                    self.head -=action*1
-                elif 4<= action and action <=6:
-                    self.miner.append(start_private_chain())
                     self.head +=action*1
+                elif 4<= action and action <=5:
+                    self.miner.append(self.start_private_chain())
                     reward = 0
+                elif action ==6 and self.validAction(action):
+                    #force to publish call something like p.sendALL
+                    reward = 3* self.full_block
+                    self.miner = []
                 self.p.goNextStep()#run so you can publish blocks
             return self._get_obs(), reward, done, {}
 # Should return 4 values, an Object, a float, boolean, dict
@@ -83,13 +90,13 @@ class PoWEnv(gym.Env):
 
     def start_private_chain(self):
         if len(self.miner) == 0:
-            self.secrete_blocks = 1
+            self.secret_blocks = 1
         else:
-            self.secrete_blocks +=1
-        return self.secrete_blocks
+            self.secret_blocks +=1
+        return self.secret_blocks
 
-    def validAction(self, state, action):
-        return True
+    def validAction(self, action):
+        return True if len(self.miner)>= (action-3) else False
 
     def reset(self):
         self.n = 99
@@ -112,7 +119,8 @@ class PoWEnv(gym.Env):
         print("byzantine node ",self.byz)
         self.p.goNextStep()
         self.p.network().printNetworkLatency() 
-        self.secrete_blocks = 0
+        self.secret_blocks = 0
+        self.miner =[]
         
 
     def render(self):

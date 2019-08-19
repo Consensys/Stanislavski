@@ -1,4 +1,5 @@
 import gym
+import gym_pow
 env = gym.make('pow-v0')
 for i_episode in range(20):
     observation = env.reset()
