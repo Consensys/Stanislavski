@@ -15,7 +15,6 @@ class PoWEnv(gym.Env):
             self.slip = slip  # probability of 'finding' a valid block
             self.empty_block = empty_block  # payout for 'empty' block, no transactions added
             self.full_block = full_block  # payout for publishing a block with transactions
-            self.state = 0  # Start at beginning of the chain
             '''Action Space represents the actions you can take go forwards on the main chain, 
             go to the side and create a fork, or do nothing
             Actions
@@ -28,24 +27,23 @@ class PoWEnv(gym.Env):
                 6 hold 3 blocks in a row
             '''
             self.action_space = spaces.Discrete(7)
-
-            #represents number of blocks you can go forward into on the main chain
-            self.observation_space = spaces.Discrete(self.n)
-            self.head = 0
-            self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(slip)
+            self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
             self.p.init()
             self.byz= self.p.getByzantineNode()
             self.MAX_HEIGHT = 99 + self.byz.head.height
-            self.chain = np.zeros((2,self.MAX_HEIGHT))
-            '''high = np.zeros(self.MAX_HEIGHT,dtype=int)
-            low = np.zeros(self.MAX_HEIGHT,dtype=int)
-            self.observation_space =  spaces.Box(low,high, dtype=np.int64)'''
+            #represents number of blocks you can go forward into on the main chain
+            self.observation_space = spaces.Tuple((
+                spaces.Discrete(self.byz.head.height),
+                spaces.Discrete(self.byz.head.height),
+                spaces.Discrete(2)))
+            self.head = 0
             self.reward = 0
             self.seed(1)
             print(self.MAX_HEIGHT)
             print("byzantine node ",self.byz)
             self.p.goNextStep()
             self.p.network().printNetworkLatency() 
+            self.secrete_blocks = 0
 
     def seed(self, seed):
             self.np_random, seed = seeding.np_random(seed)
@@ -56,6 +54,7 @@ class PoWEnv(gym.Env):
             reward = 0
             done = False
             mined = self.byz.mine10ms()
+            self.miner
             while (True):
                 self.p.goNextStep()
                 mined = self.byz.mine10ms()
@@ -66,49 +65,59 @@ class PoWEnv(gym.Env):
                 done = True
             elif mined is True:
                 if  action == 0:
-                    self.state = 1 
-                    reward = self.empty_block
-                    self.chain[1][self.head] = 1
-                    self.head +=1
-                elif action == 2:
-                    self.state =2
+                    self.miner.append(start_private_chain())
+                    reward = -1
+                elif 1<= action and action <= 3:
+                    reward = action*self.full_block
+                    self.head -=action*1
+                elif 4<= action and action <=6:
+                    self.miner.append(start_private_chain())
+                    self.head +=action*1
                     reward = 0
-                    self.chain[0][self.head] = 1
-                    self.head +=1
-                      # agent slipped, reverse action taken
-            else:  # 'backwards': go back to the beginning, get empty_block reward
-                    #represent second chain i.e. fork
-                reward = 0
-                self.state = 0
-                self.p.goNextStep()#self.chain[]
-            
-            return self.state, reward, done, {}
+                self.p.goNextStep()#run so you can publish blocks
+            return self._get_obs(), reward, done, {}
 # Should return 4 values, an Object, a float, boolean, dict
 
+    def _get_obs(self):
+        return (self.head, self.miner,len(self.miner))
+
+    def start_private_chain(self):
+        if len(self.miner) == 0:
+            self.secrete_blocks = 1
+        else:
+            self.secrete_blocks +=1
+        return self.secrete_blocks
+
+    def validAction(self, state, action):
+        return True
 
     def reset(self):
         self.n = 99
-        self.slip = .3
-        self.empty_block = 2  
-        self.full_block = 2.5  
+        self.slip = 0.25  # probability of 'finding' a valid block
+        self.empty_block = 2  # payout for 'empty' block, no transactions added
+        self.full_block = 2.5  # payout for publishing a block with transactions
         self.action_space = spaces.Discrete(7)
-        self.observation_space = spaces.Discrete(self.n)
-        self.head = 0
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
         self.byz= self.p.getByzantineNode()
         self.MAX_HEIGHT = 99 + self.byz.head.height
-        self.chain = np.zeros((2,self.MAX_HEIGHT))
+        self.observation_space = spaces.Tuple((
+            spaces.Discrete(self.byz.head.height),
+            spaces.Discrete(self.byz.head.height),
+            spaces.Discrete(2)))
+        self.head = 0
         self.reward = 0
-        self.seed(2)
+        self.seed(1)
         print(self.MAX_HEIGHT)
         print("byzantine node ",self.byz)
         self.p.goNextStep()
         self.p.network().printNetworkLatency() 
+        self.secrete_blocks = 0
+        
 
     def render(self):
         print('\n',self.head)
-            
+           
 
     def get_hashPower(self,x):
         return self.p.avgDifficulty(k)
