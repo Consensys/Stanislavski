@@ -52,3 +52,9 @@ import gym_pow
 
 env = gym.make('pow-v0')
 ```
+
+You can also run the test file that will run the environment and print observations from pow
+```
+python3 test.py
+```
+
