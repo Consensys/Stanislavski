@@ -61,8 +61,11 @@ class PoWEnv(gym.Env):
                 mined = self.byz.mine10ms()
                 if mined is True:
                     break
-            if self.byz.head.height==self.MAX_HEIGHT:
-                print(self.head)
+            #if self.byz.head.height==self.MAX_HEIGHT:
+            if self.byz.head.height>=self.MAX_HEIGHT:
+                print('HEAD: ',self.byz.head.height)
+                print('MAX HEIGHT: ',self.MAX_HEIGHT)
+
                 done = True
             elif mined is True:
                 if  action == 0:
@@ -86,7 +89,7 @@ class PoWEnv(gym.Env):
 # Should return 4 values, an Object, a float, boolean, dict
 
     def _get_obs(self):
-        return (self.head, self.miner,len(self.miner))
+        return (self.head, len(self.miner),True if len(self.miner)>0 else False)
 
     def start_private_chain(self):
         if len(self.miner) == 0:
@@ -99,7 +102,6 @@ class PoWEnv(gym.Env):
         return True if len(self.miner)>= (action-3) else False
 
     def reset(self):
-        self.n = 99
         self.slip = 0.25  # probability of 'finding' a valid block
         self.empty_block = 2  # payout for 'empty' block, no transactions added
         self.full_block = 2.5  # payout for publishing a block with transactions
@@ -107,7 +109,7 @@ class PoWEnv(gym.Env):
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
         self.byz= self.p.getByzantineNode()
-        self.MAX_HEIGHT = 99 + self.byz.head.height
+        self.MAX_HEIGHT = 1000 + self.byz.head.height
         self.observation_space = spaces.Tuple((
             spaces.Discrete(self.byz.head.height),
             spaces.Discrete(self.byz.head.height),
@@ -115,12 +117,13 @@ class PoWEnv(gym.Env):
         self.head = 0
         self.reward = 0
         self.seed(1)
-        print(self.MAX_HEIGHT)
-        print("byzantine node ",self.byz)
+        print("SELF BY H: ",self.byz.head.height)
+        print("RESET MAX H: ",self.MAX_HEIGHT)
         self.p.goNextStep()
         self.p.network().printNetworkLatency() 
         self.secret_blocks = 0
         self.miner =[]
+        return self._get_obs()
         
 
     def render(self):

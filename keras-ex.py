@@ -5,10 +5,12 @@ import gym_pow
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Flatten
 from keras.optimizers import Adam
+from keras.layers import Convolution2D as Conv2D
 
 from rl.agents.dqn import DQNAgent
 from rl.policy import BoltzmannQPolicy
 from rl.memory import SequentialMemory
+
 
 
 ENV_NAME = 'pow-v0'
@@ -24,10 +26,11 @@ learning_rate = 0.1
 
 # Next, we build a very simple model.
 model = Sequential()
-model.add(Dense(24, input_shape=(1,), activation='relu'))
-model.add(Dense(24, activation='relu'))
+model.add(Dense(24, input_shape=(1, 1, 3), activation='relu'))
+model.add(Flatten())
 model.add(Dense(env.action_space.n, activation='linear'))
 model.compile(loss='mse', optimizer=Adam(lr=learning_rate)) 
+model.build()
 print(model.summary())
 
 # Finally, we configure and compile our agent. You can use every built-in Keras optimizer and
