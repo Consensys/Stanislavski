@@ -29,7 +29,7 @@ class PoWEnv(gym.Env):
             self.action_space = spaces.Discrete(6)
             self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
             self.p.init()
-            self.byz= self.p.getByzantineNode()
+            self.byz= self.p.getByzNode()
             self.MAX_HEIGHT =100
             #represents number of blocks you can go forward into on the main chain
             self.low = 0
@@ -81,6 +81,8 @@ class PoWEnv(gym.Env):
                     #not sending your block
                     reward= -1
                 elif self.validAction(action):
+                    self.byz.setAction(action)
+                    print("Private Height: ",self.byz.privateHeight())
                     if action ==1: 
                         self.miner[1] -=1
                         #call function to store secret blocks
@@ -137,7 +139,7 @@ class PoWEnv(gym.Env):
         self.action_space = spaces.Discrete(6)
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
-        self.byz= self.p.getByzantineNode()
+        self.byz= self.p.getByzNode()
         self.MAX_HEIGHT = 100
         self.observation_space = spaces.Discrete(4)
         self.head = 0#change to actual protocol starting height
