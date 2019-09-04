@@ -64,7 +64,7 @@ class PoWEnv(gym.Env):
                     self.blocks_mined +=1
                     break
             #if self.byz.head.height==self.MAX_HEIGHT:
-            if self.blocks_mined>=self.MAX_HEIGHT:
+            if self.blocks_mined>=1000:
                 print('HEAD: ',self.byz.head.height)
                 print('MAX HEIGHT: ',self.MAX_HEIGHT)
                 done = True    
