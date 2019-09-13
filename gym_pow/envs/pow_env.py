@@ -65,8 +65,6 @@ class PoWEnv(gym.Env):
                     break
             #if self.byz.head.height==self.MAX_HEIGHT:
             if self.blocks_mined>=1000:
-                print('HEAD: ',self.byz.head.height)
-                print('MAX HEIGHT: ',self.MAX_HEIGHT)
                 done = True    
                 self.head = self.byz.head.height           
             elif mined is True:
@@ -133,7 +131,7 @@ class PoWEnv(gym.Env):
 
 
     def reset(self):
-        self.slip = 0.25  # probability of 'finding' a valid block
+        self.slip = 0.4  # probability of 'finding' a valid block
         self.empty_block = 2  # payout for 'empty' block, no transactions added
         self.full_block = 2.5  # payout for publishing a block with transactions
         self.action_space = spaces.Discrete(6)
@@ -145,8 +143,6 @@ class PoWEnv(gym.Env):
         self.head = 0#change to actual protocol starting height
         self.reward = 0
         self.seed(1)
-        print("SELF BY H: ",self.byz.head.height)
-        print("RESET MAX H: ",self.MAX_HEIGHT)
         self.p.goNextStep()
         self.p.network().printNetworkLatency() 
         self.secret_blocks = 0
@@ -174,4 +170,14 @@ class PoWEnv(gym.Env):
         values = np.array(Q[state,a] for a in actions)
         action = np.argmax(values)
         return actions[action]
+
+    def get_possible_actions(self):
+        if self.miner[1]==0:
+            return[0,1,4]
+        if self.miner[1] ==1:
+            return [0,1,2,4,5]
+        #If you want to add 1 block you need to check there is less than 3 blocks in the private chain
+        elif self.miner[1]==2:
+            return [0,1,2,3,4,5]
+
  

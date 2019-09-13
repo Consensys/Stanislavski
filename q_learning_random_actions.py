@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 
 env = gym.make('pow-v0')# Change to 40% hashpower
 
-epsilon = 0.9
-total_episodes = 1000
-max_steps = 100
+epsilon = 0.5
+total_episodes = 200
+max_steps = 1000
 
-lr_rate = 0.81
-gamma = 0.96
+lr_rate = 0.6
+gamma = 1
 
 Q = np.zeros((env.observation_space.n+1, env.action_space.n))
 print(Q)
@@ -23,7 +23,6 @@ def choose_action(state):
         action = env.action_space.sample()
     else:
         action = np.argmax(Q[state, :])
-        print("Q ---> ",Q[state, :])
     return action
 
 def learn(state, state2, reward, action):
@@ -38,16 +37,14 @@ for episode in range(total_episodes):
     state = env.reset()
     t = 0
     total_payout = 0
-    print("Episode",t)
+    if(t%10==0):
+        print("Episode",t)
     while t < max_steps:
         #env.render()
 
         action = choose_action(state)  
         print("action: ",action)
         state2, reward, done, info = env.step(action)  
-        if(state2 ==5):
-            print("Rewards",reward)
-        print("state 2: ",state2)
         learn(state, state2, reward, action)
         total_payout+=reward
         state = state2
@@ -61,9 +58,9 @@ for episode in range(total_episodes):
 
 plt.plot(average_payouts)                
 plt.xlabel('total_episodes')
-plt.ylabel('payout after 1000 rounds')
+plt.ylabel('ETH payout after {} rounds'.format(max_steps))
 plt.show()    
-print ("Average payout after {} rounds is {}".format(num_rounds, sum(average_payouts)/total_episodes))
+print ("Average payout after {} rounds is {}".format(max_steps, sum(average_payouts)/total_episodes))
 
 
         
