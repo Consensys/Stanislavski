@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 
 env = gym.make('pow-v0')# Change to 40% hashpower
 
-epsilon = 0.5
-total_episodes = 200
+epsilon = 0.2
+total_episodes = 500
 max_steps = 1000
 
-lr_rate = 0.6
+lr_rate = 0.8
 gamma = 1
 
 Q = np.zeros((env.observation_space.n+1, env.action_space.n))
@@ -24,6 +24,12 @@ def choose_action(state):
     else:
         action = np.argmax(Q[state, :])
     return action
+
+def choose_random_action():
+    action = env.action_space.sample()
+    return action
+def choose_honest_action():
+    return 0
 
 def learn(state, state2, reward, action):
     predict = Q[state, action]
@@ -43,6 +49,8 @@ for episode in range(total_episodes):
         #env.render()
 
         action = choose_action(state)  
+        #action = choose_random_action()
+        #action = choose_honest_action()
         print("action: ",action)
 
         state2, reward, done, info = env.step(action)  
