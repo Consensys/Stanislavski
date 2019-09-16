@@ -44,7 +44,9 @@ for episode in range(total_episodes):
 
         action = choose_action(state)  
         print("action: ",action)
+
         state2, reward, done, info = env.step(action)  
+        print("REWARD: ",reward)
         learn(state, state2, reward, action)
         total_payout+=reward
         state = state2

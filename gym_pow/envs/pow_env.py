@@ -18,15 +18,13 @@ class PoWEnv(gym.Env):
             '''Action Space represents the actions you can take go forwards on the main chain, 
             go to the side and create a fork, or do nothing
             Actions
-                0 Do nothing
-                1 publish 1 block
-                2 publish 2 blocks in a row
-                3 publish 3 blocks in a row
-                4 hold 1 block
-                5 hold 2 blocks in a row
+                0 publish 1 block
+                1 publish 2 blocks in a row
+                2 publish 3 blocks in a row
+                3 add 1 block to private chain
                 if you have already 2 blocks in a secret chain and you mine a new one you will automatically publish
             '''
-            self.action_space = spaces.Discrete(6)
+            self.action_space = spaces.Discrete(4)
             self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
             self.p.init()
             self.byz= self.p.getByzNode()
@@ -51,59 +49,49 @@ class PoWEnv(gym.Env):
             return [seed]
 
     def step(self, action):
-            assert self.action_space.contains(action)
-            reward = 0
-            done = False
-            mined = self.byz.mine10ms()
-            self.curr_step = self.byz.head.height
-            #Mine until you have a valid block
-            while (True):
-                self.p.goNextStep()
-                mined = self.byz.mine10ms()
-                if mined is True:
-                    self.blocks_mined +=1
-                    break
-            #if self.byz.head.height==self.MAX_HEIGHT:
-            if self.blocks_mined>=1000:
-                done = True    
-                self.head = self.byz.head.height           
-            elif mined is True:
-                #force to publish call something like p.sendALL
-                if self.miner[1] == 3:
-                    if self.head-self.miner[0]<3:
-                        reward = 3* self.full_block
-                    else:
-                        reward = 1.8
-                    return self._get_obs(), reward, done,{}
-                if  action == 0:
-                    #not sending your block
-                    reward= -1
-                elif self.validAction(action):
-                    self.byz.setAction(action)
-                    print("Private Height: ",self.byz.privateHeight())
-                    if action ==1: 
-                        self.miner[1] -=1
-                        #call function to store secret blocks
-                        reward = 1*self.full_block
-                    elif action ==2:
-                        self.miner[1]-=2
-                        #call function to store secret blocks
-                        reward = 2*self.full_block
-                    elif action == 3:
-                        self.miner[1]-=3
-                        #call function 
-                    elif action == 4:
-                        self.miner[1]=1
-                        #add to secret block in wittgenstein
-                        #reward remains 0
-                    elif action == 5:
-                        self.miner[1]=2
-                    elif action ==6:
-                        self.miner[1]=3 
-                else:
-                    return self._get_obs(), reward, done, {"invalid action"}
-                self.p.goNextStep()#run so you can publish blocks
-            return self._get_obs(), reward, done, {}
+        #Replace miner with getMined to Send
+        assert self.action_space.contains(action)
+        reward = 0
+        done = False
+        self.curr_step = self.byz.head.height
+        #Mine until you have a valid block
+        mined = self.byz.makeDecision()
+        self.miner[1]+=1
+        assert mined is True
+        #if self.byz.head.height==self.MAX_HEIGHT:
+        if self.blocks_mined>=1000:
+            done = True    
+            self.head = self.byz.head.height           
+        #force to publish call something like p.sendALL
+        if self.miner[1] >= 3:
+            self.byz.setAction(2)
+            reward = self.byz.onFoundNewBlock()
+            # change selfish miner to p.byz.privateHeight()
+            self.miner[1]-=3
+            return self._get_obs(), reward, done,{}
+        elif self.validAction(action) is True:
+            self.byz.setAction(action)
+            if action ==0:
+                #this function will refer to the action set and 
+                self.miner[1] -=1
+                #call function to store secret blocks
+                reward = self.byz.onFoundNewBlock()
+            elif action ==1:
+                self.miner[1]-=2
+                #call function to store secret blocks
+                reward = self.byz.onFoundNewBlock()
+            elif action == 2:
+                self.miner[1]-=3
+                #call function 
+                reward = self.byz.onFoundNewBlock()
+            elif action ==4:
+                reward =0
+        else:
+            print("Private Height: ",self.byz.privateHeight())
+            return self._get_obs(), reward, done, {"invalid action"}
+        self.p.goNextStep()#run so you can publish blocks
+        print("Private Height: ",self.byz.privateHeight())
+        return self._get_obs(), reward, done, {}
 # Should return 4 values, an Object, a float, boolean, dict
 
     def _get_obs(self):
@@ -117,16 +105,11 @@ class PoWEnv(gym.Env):
 
     def validAction(self, action):
         # If you want to publish a block you need to ensure you have at least that number in a private chain
-        if action <=1 and action <=3:
-            return True if self.miner[1]>=action  else False
+        if action >=0 and action <=2:
+            return True if self.miner[1]>action  else False
         #If you want to add 1 block you need to check there is less than 3 blocks in the private chain
-        elif action ==4:
+        elif action ==3:
             return True if self.miner[1]<3 else False
-        #To keep 2 blocks hidden when you mined 1 and have already 1 hidden
-        elif action ==5:
-            return True if self.miner[1]==1 else False
-        elif action ==6:
-            return True if self.miner[1]==2 else False
         return False
 
 
@@ -134,7 +117,7 @@ class PoWEnv(gym.Env):
         self.slip = 0.4  # probability of 'finding' a valid block
         self.empty_block = 2  # payout for 'empty' block, no transactions added
         self.full_block = 2.5  # payout for publishing a block with transactions
-        self.action_space = spaces.Discrete(6)
+        self.action_space = spaces.Discrete(4)
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
         self.byz= self.p.getByzNode()
