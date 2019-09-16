@@ -5,12 +5,12 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 import jnius_config
-jnius_config.set_classpath('.', 'wittgenstein-all.jar')
+jnius_config.set_classpath('.', '/Users/vanessabridge/Desktop/Projects/gym_pow/wittgenstein/wittgenstein-all.jar')
 from jnius import autoclass
 # Possible Observations miner, hashrate ratio, revenue ratio, revenue, uncle rate, total revenue, avg difficulty
 
 class PoWEnv(gym.Env):   
-    def __init__(self, n=99, slip=.25, empty_block=2, full_block=2.5):
+    def __init__(self, n=99, slip=.4, empty_block=2, full_block=2.5):
             self.n = n
             self.slip = slip  # probability of 'finding' a valid block
             self.empty_block = empty_block  # payout for 'empty' block, no transactions added
@@ -18,24 +18,21 @@ class PoWEnv(gym.Env):
             '''Action Space represents the actions you can take go forwards on the main chain, 
             go to the side and create a fork, or do nothing
             Actions
-                0 Do nothing
-                1 publish 1 block
-                2 publish 2 blocks in a row
-                3 publish 3 blocks in a row
-                4 hold 1 block
-                5 hold 2 blocks in a row
-                6 hold 3 blocks in a row
+                0 publish 1 block
+                1 publish 2 blocks in a row
+                2 publish 3 blocks in a row
+                3 add 1 block to private chain
+                if you have already 2 blocks in a secret chain and you mine a new one you will automatically publish
             '''
-            self.action_space = spaces.Discrete(7)
+            self.action_space = spaces.Discrete(4)
             self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
             self.p.init()
-            self.byz= self.p.getByzantineNode()
-            self.MAX_HEIGHT = 99 + self.byz.head.height
+            self.byz= self.p.getByzNode()
+            self.MAX_HEIGHT =100
             #represents number of blocks you can go forward into on the main chain
-            self.observation_space = spaces.Tuple((
-                spaces.Discrete(self.byz.head.height),
-                spaces.Discrete(self.byz.head.height),
-                spaces.Discrete(2)))
+            self.low = 0
+            self.high = 3
+            self.observation_space = spaces.Discrete(4)
             self.head = 0
             self.reward = 0
             self.seed(1)
@@ -43,86 +40,98 @@ class PoWEnv(gym.Env):
             print("byzantine node ",self.byz)
             self.p.goNextStep()
             self.p.network().printNetworkLatency() 
-            self.secret_blocks = 0
-            self.miner =[]
+            self.miner = [0,0]
+            self.curr_step=0
+            self.blocks_mined =0
 
     def seed(self, seed):
             self.np_random, seed = seeding.np_random(seed)
             return [seed]
 
     def step(self, action):
-            assert self.action_space.contains(action)
-            reward = 0
-            done = False
-            mined = self.byz.mine10ms()
-            #Mine until you have a valid block
-            while (True):
-                self.p.goNextStep()
-                mined = self.byz.mine10ms()
-                if mined is True:
-                    break
-            #if self.byz.head.height==self.MAX_HEIGHT:
-            if self.byz.head.height>=self.MAX_HEIGHT:
-                print('HEAD: ',self.byz.head.height)
-                print('MAX HEIGHT: ',self.MAX_HEIGHT)
-
-                done = True
-            elif mined is True:
-                if  action == 0:
-                    self.miner.append(self.start_private_chain())
-                    reward = -1
-                elif 1<= action and action <= 3 and self.validAction(action):
-                    for i in range(action):
-                        if len(self.miner) >0:
-                            self.miner.pop(0)
-                    reward = action*self.full_block
-                    self.head +=action*1
-                elif 4<= action and action <=5:
-                    self.miner.append(self.start_private_chain())
-                    reward = 0
-                elif action ==6 and self.validAction(action):
-                    #force to publish call something like p.sendALL
-                    reward = 3* self.full_block
-                    self.miner = []
-                self.p.goNextStep()#run so you can publish blocks
-            return self._get_obs(), reward, done, {}
+        #Replace miner with getMined to Send
+        assert self.action_space.contains(action)
+        reward = 0
+        done = False
+        self.curr_step = self.byz.head.height
+        #Mine until you have a valid block
+        mined = self.byz.makeDecision()
+        self.miner[1]+=1
+        assert mined is True
+        #if self.byz.head.height==self.MAX_HEIGHT:
+        if self.blocks_mined>=1000:
+            done = True    
+            self.head = self.byz.head.height           
+        #force to publish call something like p.sendALL
+        if self.miner[1] >= 3:
+            self.byz.setAction(2)
+            reward = self.byz.onFoundNewBlock()
+            # change selfish miner to p.byz.privateHeight()
+            self.miner[1]-=3
+            return self._get_obs(), reward, done,{}
+        elif self.validAction(action) is True:
+            self.byz.setAction(action)
+            if action ==0:
+                #this function will refer to the action set and 
+                self.miner[1] -=1
+                #call function to store secret blocks
+                reward = self.byz.onFoundNewBlock()
+            elif action ==1:
+                self.miner[1]-=2
+                #call function to store secret blocks
+                reward = self.byz.onFoundNewBlock()
+            elif action == 2:
+                self.miner[1]-=3
+                #call function 
+                reward = self.byz.onFoundNewBlock()
+            elif action ==4:
+                reward =0
+        else:
+            print("Private Height: ",self.byz.privateHeight())
+            return self._get_obs(), reward, done, {"invalid action"}
+        self.p.goNextStep()#run so you can publish blocks
+        print("Private Height: ",self.byz.privateHeight())
+        return self._get_obs(), reward, done, {}
 # Should return 4 values, an Object, a float, boolean, dict
 
     def _get_obs(self):
-        return (self.head, len(self.miner),True if len(self.miner)>0 else False)
+        print("HEAD, Type : ", self.head, type(self.head))
+        print("Miner Head", self.miner)
+        if(type(self.head)==list):
 
-    def start_private_chain(self):
-        if len(self.miner) == 0:
-            self.secret_blocks = 1
-        else:
-            self.secret_blocks +=1
-        return self.secret_blocks
+            return np.array([self.miner[1]])
+       
+        return np.array([self.miner[1]])
 
     def validAction(self, action):
-        return True if len(self.miner)>= (action-3) else False
+        # If you want to publish a block you need to ensure you have at least that number in a private chain
+        if action >=0 and action <=2:
+            return True if self.miner[1]>action  else False
+        #If you want to add 1 block you need to check there is less than 3 blocks in the private chain
+        elif action ==3:
+            return True if self.miner[1]<3 else False
+        return False
+
 
     def reset(self):
-        self.slip = 0.25  # probability of 'finding' a valid block
+        self.slip = 0.4  # probability of 'finding' a valid block
         self.empty_block = 2  # payout for 'empty' block, no transactions added
         self.full_block = 2.5  # payout for publishing a block with transactions
-        self.action_space = spaces.Discrete(7)
+        self.action_space = spaces.Discrete(4)
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
-        self.byz= self.p.getByzantineNode()
-        self.MAX_HEIGHT = 1000 + self.byz.head.height
-        self.observation_space = spaces.Tuple((
-            spaces.Discrete(self.byz.head.height),
-            spaces.Discrete(self.byz.head.height),
-            spaces.Discrete(2)))
-        self.head = 0
+        self.byz= self.p.getByzNode()
+        self.MAX_HEIGHT = 100
+        self.observation_space = spaces.Discrete(4)
+        self.head = 0#change to actual protocol starting height
         self.reward = 0
         self.seed(1)
-        print("SELF BY H: ",self.byz.head.height)
-        print("RESET MAX H: ",self.MAX_HEIGHT)
         self.p.goNextStep()
         self.p.network().printNetworkLatency() 
         self.secret_blocks = 0
-        self.miner =[]
+        self.miner =[0,0]
+        self.curr_step =0
+        self.blocks_mined =0
         return self._get_obs()
         
 
@@ -144,4 +153,14 @@ class PoWEnv(gym.Env):
         values = np.array(Q[state,a] for a in actions)
         action = np.argmax(values)
         return actions[action]
+
+    def get_possible_actions(self):
+        if self.miner[1]==0:
+            return[0,1,4]
+        if self.miner[1] ==1:
+            return [0,1,2,4,5]
+        #If you want to add 1 block you need to check there is less than 3 blocks in the private chain
+        elif self.miner[1]==2:
+            return [0,1,2,3,4,5]
+
  

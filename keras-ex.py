@@ -26,7 +26,7 @@ learning_rate = 0.1
 
 # Next, we build a very simple model.
 model = Sequential()
-model.add(Dense(24, input_shape=(1, 1, 3), activation='relu'))
+model.add(Dense(24, input_shape=(env._get_obs), activation='relu'))
 model.add(Flatten())
 model.add(Dense(env.action_space.n, activation='linear'))
 model.compile(loss='mse', optimizer=Adam(lr=learning_rate)) 
