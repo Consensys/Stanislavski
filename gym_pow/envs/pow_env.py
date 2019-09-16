@@ -38,7 +38,6 @@ class PoWEnv(gym.Env):
             self.seed(1)
             print(self.MAX_HEIGHT)
             print("byzantine node ",self.byz)
-            self.p.goNextStep()
             self.p.network().printNetworkLatency() 
             self.miner = [0,0]
             self.curr_step=0
@@ -53,45 +52,37 @@ class PoWEnv(gym.Env):
         assert self.action_space.contains(action)
         reward = 0
         done = False
-        self.curr_step = self.byz.head.height
         #Mine until you have a valid block
-        mined = self.byz.makeDecision()
+        mined = self.byz.goNextStep()
         self.miner[1]+=1
         assert mined is True
         #if self.byz.head.height==self.MAX_HEIGHT:
-        if self.blocks_mined>=1000:
-            done = True    
-            self.head = self.byz.head.height           
+        if self.p.getTimeInSeconds()>=36000:
+            done = True      
         #force to publish call something like p.sendALL
+        reward = self.byz.getReward()
         if self.miner[1] >= 3:
-            self.byz.setAction(2)
-            reward = self.byz.onFoundNewBlock()
-            # change selfish miner to p.byz.privateHeight()
+            self.byz.sendMinedBlocks(3)
             self.miner[1]-=3
             return self._get_obs(), reward, done,{}
         elif self.validAction(action) is True:
-            self.byz.setAction(action)
             if action ==0:
-                #this function will refer to the action set and 
-                self.miner[1] -=1
-                #call function to store secret blocks
-                reward = self.byz.onFoundNewBlock()
+                self.byz.sendMinedBlocks(0)
             elif action ==1:
-                self.miner[1]-=2
-                #call function to store secret blocks
-                reward = self.byz.onFoundNewBlock()
+                self.miner[1]-=1
+                self.byz.sendMinedBlocks(1)
+                
             elif action == 2:
-                self.miner[1]-=3
+                self.miner[1]-=2
                 #call function 
-                reward = self.byz.onFoundNewBlock()
-            elif action ==4:
-                reward =0
+                self.byz.sendMinedBlocks(2)
+                
+            elif action ==3:
+                self.miner[1]-=3
+                self.byz.sendMinedBlocks(3)
         else:
-            print("Private Height: ",self.byz.privateHeight())
             return self._get_obs(), reward, done, {"invalid action"}
-        self.p.goNextStep()#run so you can publish blocks
-        print("Private Height: ",self.byz.privateHeight())
-        return self._get_obs(), reward, done, {}
+        return self._get_obs(), reward, done, {self.p.getTimeInSeconds()}
 # Should return 4 values, an Object, a float, boolean, dict
 
     def _get_obs(self):
@@ -105,10 +96,10 @@ class PoWEnv(gym.Env):
 
     def validAction(self, action):
         # If you want to publish a block you need to ensure you have at least that number in a private chain
-        if action >=0 and action <=2:
+        if action >=1 and action <=3:
             return True if self.miner[1]>action  else False
         #If you want to add 1 block you need to check there is less than 3 blocks in the private chain
-        elif action ==3:
+        elif action ==0:
             return True if self.miner[1]<3 else False
         return False
 
@@ -126,7 +117,6 @@ class PoWEnv(gym.Env):
         self.head = 0#change to actual protocol starting height
         self.reward = 0
         self.seed(1)
-        self.p.goNextStep()
         self.p.network().printNetworkLatency() 
         self.secret_blocks = 0
         self.miner =[0,0]
