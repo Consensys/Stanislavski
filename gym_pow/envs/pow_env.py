@@ -5,7 +5,7 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 import jnius_config
-jnius_config.set_classpath('.', '/Users/vanessabridge/Desktop/Projects/gym_pow/wittgenstein/wittgenstein-all.jar')
+jnius_config.set_classpath('.', './wittgenstein/wittgenstein-all.jar')
 from jnius import autoclass
 # Possible Observations miner, hashrate ratio, revenue ratio, revenue, uncle rate, total revenue, avg difficulty
 
