@@ -13,7 +13,7 @@ max_steps = 1000
 lr_rate = 0.8
 gamma = 1
 
-Q = np.zeros((env.observation_space.n+1, env.action_space.n))
+Q = np.zeros((10, env.action_space.n))
 print(Q)
 
     
@@ -22,7 +22,7 @@ def choose_action(state):
     if np.random.uniform(0, 1) < epsilon:
         action = env.action_space.sample()
     else:
-        action = np.argmax(Q[state, :])
+        action = np.argmax(Q[state[1], :])
     return action
 
 def choose_random_action():
@@ -32,10 +32,10 @@ def choose_honest_action():
     return 0
 
 def learn(state, state2, reward, action):
-    predict = Q[state, action]
+    predict = Q[state[1], action]
     print("predicted value", predict)
-    target = reward + gamma * np.max(Q[state2, :])
-    Q[state, action] = Q[state, action] + lr_rate * (target - predict)
+    target = reward + gamma * np.max(Q[state2[1], :])
+    Q[state[1], action] = Q[state[1], action] + lr_rate * (target - predict)
 
 # Start
 average_payouts = []
@@ -54,7 +54,7 @@ for episode in range(total_episodes):
         print("action: ",action)
 
         state2, reward, done, info = env.step(action)  
-        print("REWARD: ",reward)
+        print("STATE: ",state2)
         learn(state, state2, reward, action)
         total_payout+=reward
         state = state2

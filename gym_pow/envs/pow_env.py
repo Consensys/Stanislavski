@@ -58,7 +58,7 @@ class PoWEnv(gym.Env):
             self.byz.sendMinedBlocks(3)
             distance = self.byz.getAdvance()
             secretHeight = self.byz.getSecretBlockSize()
-            return self._get_obs(), reward, done,{}
+            return np.array(self.state), reward, done,{}
         elif self.validAction(action,secretHeight) is True:
             if action ==0:
                 self.byz.sendMinedBlocks(0)
@@ -73,7 +73,7 @@ class PoWEnv(gym.Env):
             self.state = (distance,secretHeight)
         else:
             return self.state, reward, done, {"invalid action"}
-        return self.state, reward, done, {self.p.getTimeInSeconds()}
+        return np.array(self.state), reward, done, {self.p.getTimeInSeconds()}
 # Should return 4 values, an Object, a float, boolean, dict
 
     def validAction(self, action,secretHeight):
@@ -88,11 +88,11 @@ class PoWEnv(gym.Env):
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
         self.byz= self.p.getByzNode()
-        self.state = np.array([self.np_random.uniform(low=-0, high=-0), 0])
+        self.state = np.array((0,0))
         self.reward = 0
         self.seed(1)
         self.p.network().printNetworkLatency() 
-        return self.state
+        return np.array(self.state)
         
 
     def render(self):
