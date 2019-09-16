@@ -10,15 +10,12 @@ from jnius import autoclass
 # Possible Observations miner, hashrate ratio, revenue ratio, revenue, uncle rate, total revenue, avg difficulty
 
 class PoWEnv(gym.Env):   
-    def __init__(self, n=99, slip=.4, empty_block=2, full_block=2.5):
-            self.n = n
+    def __init__(self, slip=.4, empty_block=2, full_block=2.5):
             self.slip = slip  # probability of 'finding' a valid block
-            self.empty_block = empty_block  # payout for 'empty' block, no transactions added
-            self.full_block = full_block  # payout for publishing a block with transactions
             '''Action Space represents the actions you can take go forwards on the main chain, 
             go to the side and create a fork, or do nothing
             Actions
-                0 publish 1 block
+                0 hold 1 block
                 1 publish 2 blocks in a row
                 2 publish 3 blocks in a row
                 3 add 1 block to private chain
@@ -28,20 +25,16 @@ class PoWEnv(gym.Env):
             self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
             self.p.init()
             self.byz= self.p.getByzNode()
-            self.MAX_HEIGHT =100
+            self.min_distance = -3
+            self.max_distance = 3
+            self.max_secret_chain =3
             #represents number of blocks you can go forward into on the main chain
-            self.low = 0
-            self.high = 3
-            self.observation_space = spaces.Discrete(4)
-            self.head = 0
+            self.low = np.array([self.min_distance, -self.max_secret_chain])
+            self.high = np.array([self.max_distance, self.max_secret_chain])
+            self.observation_space = spaces.Box(self.low, self.high, dtype=np.int32)
             self.reward = 0
             self.seed(1)
-            print(self.MAX_HEIGHT)
-            print("byzantine node ",self.byz)
             self.p.network().printNetworkLatency() 
-            self.miner = [0,0]
-            self.curr_step=0
-            self.blocks_mined =0
 
     def seed(self, seed):
             self.np_random, seed = seeding.np_random(seed)
@@ -54,75 +47,52 @@ class PoWEnv(gym.Env):
         done = False
         #Mine until you have a valid block
         mined = self.byz.goNextStep()
-        self.miner[1]+=1
+        distance, secretHeight = self.state
         assert mined is True
         #if self.byz.head.height==self.MAX_HEIGHT:
-        if self.p.getTimeInSeconds()>=36000:
+        if self.p.getTimeInSeconds()>=3600:
             done = True      
         #force to publish call something like p.sendALL
         reward = self.byz.getReward()
-        if self.miner[1] >= 3:
+        if distance >= 3:
             self.byz.sendMinedBlocks(3)
-            self.miner[1]-=3
+            distance = self.byz.getAdvance()
+            secretHeight = self.byz.getSecretBlockSize()
             return self._get_obs(), reward, done,{}
-        elif self.validAction(action) is True:
+        elif self.validAction(action,secretHeight) is True:
             if action ==0:
                 self.byz.sendMinedBlocks(0)
             elif action ==1:
-                self.miner[1]-=1
                 self.byz.sendMinedBlocks(1)
-                
             elif action == 2:
-                self.miner[1]-=2
-                #call function 
                 self.byz.sendMinedBlocks(2)
-                
             elif action ==3:
-                self.miner[1]-=3
                 self.byz.sendMinedBlocks(3)
+            distance = self.byz.getAdvance()
+            secretHeight = self.byz.getSecretBlockSize()
+            self.state = (distance,secretHeight)
         else:
-            return self._get_obs(), reward, done, {"invalid action"}
-        return self._get_obs(), reward, done, {self.p.getTimeInSeconds()}
+            return self.state, reward, done, {"invalid action"}
+        return self.state, reward, done, {self.p.getTimeInSeconds()}
 # Should return 4 values, an Object, a float, boolean, dict
 
-    def _get_obs(self):
-        print("HEAD, Type : ", self.head, type(self.head))
-        print("Miner Head", self.miner)
-        if(type(self.head)==list):
+    def validAction(self, action,secretHeight):
+        if secretHeight>= action:
+            return True
 
-            return np.array([self.miner[1]])
-       
-        return np.array([self.miner[1]])
-
-    def validAction(self, action):
-        # If you want to publish a block you need to ensure you have at least that number in a private chain
-        if action >=1 and action <=3:
-            return True if self.miner[1]>action  else False
-        #If you want to add 1 block you need to check there is less than 3 blocks in the private chain
-        elif action ==0:
-            return True if self.miner[1]<3 else False
         return False
-
 
     def reset(self):
         self.slip = 0.4  # probability of 'finding' a valid block
-        self.empty_block = 2  # payout for 'empty' block, no transactions added
-        self.full_block = 2.5  # payout for publishing a block with transactions
         self.action_space = spaces.Discrete(4)
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
         self.byz= self.p.getByzNode()
-        self.MAX_HEIGHT = 100
-        self.observation_space = spaces.Discrete(4)
-        self.head = 0#change to actual protocol starting height
+        self.state = np.array([self.np_random.uniform(low=-0, high=-0), 0])
         self.reward = 0
         self.seed(1)
         self.p.network().printNetworkLatency() 
-        self.secret_blocks = 0
-        self.miner =[0,0]
-        self.curr_step =0
-        self.blocks_mined =0
-        return self._get_obs()
+        return self.state
         
 
     def render(self):
@@ -144,13 +114,4 @@ class PoWEnv(gym.Env):
         action = np.argmax(values)
         return actions[action]
 
-    def get_possible_actions(self):
-        if self.miner[1]==0:
-            return[0,1,4]
-        if self.miner[1] ==1:
-            return [0,1,2,4,5]
-        #If you want to add 1 block you need to check there is less than 3 blocks in the private chain
-        elif self.miner[1]==2:
-            return [0,1,2,3,4,5]
-
- 
+   
