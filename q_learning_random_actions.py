@@ -6,14 +6,14 @@ import matplotlib.pyplot as plt
 
 env = gym.make('pow-v0')# Change to 40% hashpower
 
-epsilon = 0.2
+epsilon = 0.5
 total_episodes = 500
 max_steps = 1000
 
 lr_rate = 0.8
 gamma = 1
 
-Q = np.zeros((10, env.action_space.n))
+Q = np.zeros((100, env.action_space.n))
 print(Q)
 
     

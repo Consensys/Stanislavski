@@ -10,12 +10,14 @@ env.reset()
 # Define Q-learning function
 def QLearning(env, learning, discount, epsilon, min_eps, episodes):
     # Determine size of discretized state space
-    num_states = (env.observation_space.high - env.observation_space.low)*\
-                    np.array([10, 100])
-    num_states = np.round(num_states, 0).astype(int) + 1
+    num_states = (env.observation_space.high - env.observation_space.low)*np.arange(1,121).reshape(30,4)
+    num_states = np.random.randint(num_states) + 1
     
     # Initialize Q table
-    Q = np.random.uniform(low = -1, high = 1, 
+    print("0 :",num_states[0])
+    print("1 :",num_states[1])
+    print("2 :",env.action_space.n)
+    Q = np.random.randint(low = -1, high = 1, 
                           size = (num_states[0], num_states[1], 
                                   env.action_space.n))
     
@@ -34,14 +36,10 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes):
         state = env.reset()
         
         # Discretize state
-        state_adj = (state - env.observation_space.low)*np.array([10, 100])
-        state_adj = np.round(state_adj, 0).astype(int)
+        state_adj = (state - env.observation_space.low)*np.arange(1,120).reshape(30,4)
+        state_adj = np.rint(state_adj)
     
         while done != True:   
-            # Render environment for last five episodes
-            if i >= (episodes - 20):
-                env.render()
-                
             # Determine next action - epsilon greedy strategy
             if np.random.random() < 1 - epsilon:
                 action = np.argmax(Q[state_adj[0], state_adj[1]]) 
@@ -52,20 +50,14 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes):
             state2, reward, done, info = env.step(action) 
             
             # Discretize state2
-            state2_adj = (state2 - env.observation_space.low)*np.array([10, 100])
-            state2_adj = np.round(state2_adj, 0).astype(int)
+            state2_adj = (state2 - env.observation_space.low)*np.arange(1,120).reshape(30,4)
+            state2_adj = np.rint(state2_adj)
             
-            #Allow for terminal states
-            if done and state2[0] >= 0.5:
-                Q[state_adj[0], state_adj[1], action] = reward
-                
-            # Adjust Q value for current state
-            else:
-                delta = learning*(reward + 
-                                 discount*np.max(Q[state2_adj[0], 
-                                                   state2_adj[1]]) - 
-                                 Q[state_adj[0], state_adj[1],action])
-                Q[state_adj[0], state_adj[1],action] += delta
+
+            delta = learning*(reward + 
+                             discount*np.max(Q[state2_adj[0],state2_adj[1]]) - \
+                             Q[state_adj[0], state_adj[1],action])
+            Q[state_adj[0], state_adj[1],action] += delta
                                      
             # Update variables
             tot_reward += reward
@@ -91,7 +83,7 @@ def QLearning(env, learning, discount, epsilon, min_eps, episodes):
     return ave_reward_list
 
 # Run Q-learning algorithm
-rewards = QLearning(env, 0.2, 0.9, 0.8, 0, 5000)
+rewards = QLearning(env, 0.2, 0.9, 0.8, 0, 200)
 
 # Plot Rewards
 plt.plot(100*(np.arange(len(rewards)) + 1), rewards)
