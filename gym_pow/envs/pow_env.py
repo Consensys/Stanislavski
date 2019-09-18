@@ -10,7 +10,7 @@ from jnius import autoclass
 # Possible Observations miner, hashrate ratio, revenue ratio, revenue, uncle rate, total revenue, avg difficulty
 
 class PoWEnv(gym.Env):   
-    def __init__(self, slip=.4, empty_block=2, full_block=2.5):
+    def __init__(self, slip=.4):
             self.slip = slip  # probability of 'finding' a valid block
             '''Action Space represents the actions you can take go forwards on the main chain, 
             go to the side and create a fork, or do nothing
@@ -29,8 +29,8 @@ class PoWEnv(gym.Env):
             self.max_distance = 3
             self.max_secret_chain =3
             #represents number of blocks you can go forward into on the main chain
-            self.low = np.array([self.min_distance, -self.max_secret_chain]).astype(int)
-            self.high = np.array([self.max_distance, self.max_secret_chain]).astype(int)
+            self.low = np.array([self.min_distance, -self.max_secret_chain])
+            self.high = np.array([self.max_distance, self.max_secret_chain])
             self.observation_space = spaces.Box(self.low, self.high, dtype=np.int32)
             self.reward = 0
             self.seed(1)
@@ -72,8 +72,8 @@ class PoWEnv(gym.Env):
             secretHeight = self.byz.getSecretBlockSize()
             self.state = (distance,secretHeight)
         else:
-            return np.array(self.state).astype(int), reward, done, {"invalid action"}
-        return np.array(self.state).astype(int), reward, done, {self.p.getTimeInSeconds()}
+            return np.array(self.state), reward, done, {"invalid action"}
+        return np.array(self.state), reward, done, {self.p.getTimeInSeconds()}
 # Should return 4 values, an Object, a float, boolean, dict
 
     def validAction(self, action,secretHeight):
@@ -88,7 +88,7 @@ class PoWEnv(gym.Env):
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
         self.byz= self.p.getByzNode()
-        self.state = np.array((0,0)).astype(int)
+        self.state = np.array((0,0))
         self.reward = 0
         self.seed(1)
         self.p.network().printNetworkLatency() 

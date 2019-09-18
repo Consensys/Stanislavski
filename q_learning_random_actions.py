@@ -13,7 +13,7 @@ max_steps = 1000
 lr_rate = 0.8
 gamma = 1
 
-Q = np.zeros((100, env.action_space.n))
+Q = np.zeros((5, env.action_space.n))
 print(Q)
 
     
@@ -66,6 +66,7 @@ for episode in range(total_episodes):
             time.sleep(0.1)
     average_payouts.append(total_payout)
 
+print(Q)
 plt.plot(average_payouts)                
 plt.xlabel('total_episodes')
 plt.ylabel('ETH payout after {} rounds'.format(max_steps))
@@ -75,7 +76,7 @@ print ("Average payout after {} rounds is {}".format(max_steps, sum(average_payo
 
         
 
-print(Q)
+
 
 with open("pow_qTable.pkl", 'wb') as f:
     pickle.dump(Q, f)
