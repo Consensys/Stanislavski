@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 env = gym.make('pow-v0')# Change to 40% hashpower
 
 epsilon = 0.5
-total_episodes = 50
+total_episodes = 50000
 lr_rate = 0.8
 gamma = 1
 

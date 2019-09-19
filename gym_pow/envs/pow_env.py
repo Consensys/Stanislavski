@@ -96,7 +96,7 @@ class PoWEnv(gym.Env):
         
 
     def render(self):
-        print('\n',self.byz.minedToSend())
+        print('\n',self.byz.minedToSend)
            
 
     def get_hashPower(self,x):
