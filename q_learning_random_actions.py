@@ -7,9 +7,7 @@ import matplotlib.pyplot as plt
 env = gym.make('pow-v0')# Change to 40% hashpower
 
 epsilon = 0.5
-total_episodes = 500
-max_steps = 1000
-
+total_episodes = 50
 lr_rate = 0.8
 gamma = 1
 
@@ -39,15 +37,17 @@ def learn(state, state2, reward, action):
 
 # Start
 average_payouts = []
+t = 0
 for episode in range(total_episodes):
     state = env.reset()
-    t = 0
+    done = False
     total_payout = 0
     if(t%10==0):
         print("Episode",t)
-    while t < max_steps:
+    max_steps=0
+    while done is False:
         #env.render()
-
+        max_steps+=1
         action = choose_action(state)  
         #action = choose_random_action()
         #action = choose_honest_action()
@@ -58,10 +58,8 @@ for episode in range(total_episodes):
         learn(state, state2, reward, action)
         total_payout+=reward
         state = state2
-
-        t += 1
-       
         if done:
+            t+=1
             break
             time.sleep(0.1)
     average_payouts.append(total_payout)
@@ -70,7 +68,7 @@ print(Q)
 plt.plot(average_payouts)                
 plt.xlabel('total_episodes')
 plt.ylabel('ETH payout after {} rounds'.format(max_steps))
-plt.show()    
+plt.savefig("Q_learning_GRAPH")    
 print ("Average payout after {} rounds is {}".format(max_steps, sum(average_payouts)/total_episodes))
 
 

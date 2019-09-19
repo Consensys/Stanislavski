@@ -54,8 +54,8 @@ class PoWEnv(gym.Env):
             done = True      
         #force to publish call something like p.sendALL
         reward = self.byz.getReward()
-        if distance >= 3:
-            self.byz.sendMinedBlocks(3)
+        if distance >= 5:
+            self.byz.sendMinedBlocks(5)
             distance = self.byz.getAdvance()
             secretHeight = self.byz.getSecretBlockSize()
             return np.array(self.state), reward, done,{}
@@ -96,7 +96,7 @@ class PoWEnv(gym.Env):
         
 
     def render(self):
-        print('\n',self.head)
+        print('\n',self.byz.minedToSend())
            
 
     def get_hashPower(self,x):
