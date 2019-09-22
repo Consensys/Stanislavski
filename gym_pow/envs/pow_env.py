@@ -50,10 +50,10 @@ class PoWEnv(gym.Env):
         distance, secretHeight = self.state
         assert mined is True
         #if self.byz.head.height==self.MAX_HEIGHT:
-        if self.p.getTimeInSeconds()>=3600:
+        if self.p.getTimeInSeconds()>=36000:
+            reward = self.byz.getReward()
             done = True      
         #force to publish call something like p.sendALL
-        reward = self.byz.getReward()
         if distance >= 5:
             self.byz.sendMinedBlocks(5)
             distance = self.byz.getAdvance()
@@ -72,7 +72,7 @@ class PoWEnv(gym.Env):
             secretHeight = self.byz.getSecretBlockSize()
             self.state = (distance,secretHeight)
         else:
-            return np.array(self.state), reward, done, {"invalid action"}
+            return np.array(self.state), reward, done, {"invalid action", self.p.getTimeInSeconds()}
         return np.array(self.state), reward, done, {self.p.getTimeInSeconds()}
 # Should return 4 values, an Object, a float, boolean, dict
 
