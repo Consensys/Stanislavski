@@ -25,11 +25,11 @@ class PoWEnv(gym.Env):
             self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
             self.p.init()
             self.byz= self.p.getByzNode()
+            #represents number of blocks you can go forward into on the main chain
             self.min_distance = -3
             self.max_distance = 3
             self.max_secret_chain =3
-            #represents number of blocks you can go forward into on the main chain
-            self.low = np.array([self.min_distance, -self.max_secret_chain])
+            self.low = np.array([self.min_distance,-self.max_distance ])
             self.high = np.array([self.max_distance, self.max_secret_chain])
             self.observation_space = spaces.Box(self.low, self.high, dtype=np.int32)
             self.reward = 0
@@ -50,7 +50,8 @@ class PoWEnv(gym.Env):
         distance, secretHeight = self.state
         assert mined is True
         #if self.byz.head.height==self.MAX_HEIGHT:
-        if self.p.getTimeInSeconds()>=36000:
+        sim_t = self.p.getTimeInSeconds()
+        if sim_t>=3600*5:
             reward = self.byz.getReward()
             done = True      
         #force to publish call something like p.sendALL

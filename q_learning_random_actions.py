@@ -6,8 +6,7 @@ import matplotlib.pyplot as plt
 
 env = gym.make('pow-v0')# Change to 40% hashpower
 
-epsilon = 0.5
-total_episodes = 50000
+total_episodes = 5000
 lr_rate = 0.4
 gamma = 1
 
@@ -15,9 +14,9 @@ Q = np.zeros((100, env.action_space.n))
 print(Q)
 
     
-def choose_action(state):
+def choose_action(state,_epsilon):
     action=0
-    if np.random.uniform(0, 1) < epsilon:
+    if np.random.uniform(0, 1) < _epsilon:
         action = env.action_space.sample()
     else:
         action = np.argmax(Q[state[1], :])
@@ -26,6 +25,7 @@ def choose_action(state):
 def choose_random_action():
     action = env.action_space.sample()
     return action
+
 def choose_honest_action():
     return 0
 
@@ -36,9 +36,13 @@ def learn(state, state2, reward, action):
     Q[state[1], action] = Q[state[1], action] + lr_rate * (target - predict)
 
 # Start
-def start(type_of_action):
+def start(type_of_action,EPSILON):
     average_payouts = []
     t = 0
+    epsilon = EPSILON
+    START_EPSILON_DECAYING = 1
+    END_EPSILON_DECAYING = total_episodes//2
+    epsilon_decay_value = epsilon/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
     for episode in range(total_episodes):
         state = env.reset()
         done = False
@@ -55,7 +59,7 @@ def start(type_of_action):
             elif(type_of_action=="honest"):
                 action = choose_honest_action()
             else:
-                action = choose_action(state) 
+                action = choose_action(state,epsilon) 
             print("action: ",action)
 
             state2, reward, done, info = env.step(action)  
@@ -64,6 +68,8 @@ def start(type_of_action):
             learn(state, state2, reward, action)
             total_payout+=reward
             state = state2
+            if END_EPSILON_DECAYING >= episode >= START_EPSILON_DECAYING:
+                epsilon -= epsilon_decay_value
             if done:
                 t+=1
                 break
@@ -82,9 +88,9 @@ def start(type_of_action):
 
 
 def main():
-    start("random")
-    start("honest")
-    start("agent")
+    start("random",1)
+    start("honest",1)
+    start("agent",1)
 
 
 if __name__ == '__main__':
