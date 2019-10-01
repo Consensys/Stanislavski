@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 env = gym.make('pow-v0')# Change to 40% hashpower
 
-total_episodes = 5000
+total_episodes = 1000
 lr_rate = 0.4
 gamma = 1
 
@@ -16,7 +16,7 @@ print(Q)
     
 def choose_action(state,_epsilon):
     action=0
-    if np.random.uniform(0, 1) < _epsilon:
+    if np.random.uniform(0, 1) >_epsilon:
         action = env.action_space.sample()
     else:
         action = np.argmax(Q[state[1], :])
@@ -80,7 +80,8 @@ def start(type_of_action,EPSILON):
     plt.plot(average_payouts)                
     plt.xlabel('total_episodes')
     plt.ylabel('ETH payout after 1 hour')
-    plt.savefig("Q_learning_GRAPH_%s"%type_of_action)    
+    plt.savefig("Q_learning_GRAPH_%s"%type_of_action)
+    plt.clf()    
     print ("Average payout after {} rounds is {}".format(max_steps, sum(average_payouts)/total_episodes))
 
     with open("pow_qTable.pkl", 'wb') as f:

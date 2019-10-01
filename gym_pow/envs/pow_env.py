@@ -51,7 +51,7 @@ class PoWEnv(gym.Env):
         assert mined is True
         #if self.byz.head.height==self.MAX_HEIGHT:
         sim_t = self.p.getTimeInSeconds()
-        if sim_t>=3600*5:
+        if sim_t>=3600:
             reward = self.byz.getReward()
             done = True      
         #force to publish call something like p.sendALL
