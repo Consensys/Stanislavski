@@ -27,7 +27,7 @@ def choose_random_action():
     return action
 
 def choose_honest_action():
-    return 0
+    return 1
 
 def learn(state, state2, reward, action):
     predict = Q[state[1], action]
@@ -87,6 +87,10 @@ def start(type_of_action,EPSILON):
     with open("pow_qTable.pkl", 'wb') as f:
         pickle.dump(Q, f)
 
+
+'''def print_graph_periodically(period):
+    plt.plot()#stored data per period
+    plt.xlabel()'''
 
 def main():
     start("random",1)

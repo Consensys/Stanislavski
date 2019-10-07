@@ -47,7 +47,8 @@ class PoWEnv(gym.Env):
         done = False
         #Mine until you have a valid block
         mined = self.byz.goNextStep()
-        distance, secretHeight = self.state
+        distance = self.byz.getAdvance()
+        secretHeight = self.byz.getSecretBlockSize()
         assert mined is True
         #if self.byz.head.height==self.MAX_HEIGHT:
         sim_t = self.p.getTimeInSeconds()
@@ -55,8 +56,8 @@ class PoWEnv(gym.Env):
             reward = self.byz.getReward()
             done = True      
         #force to publish call something like p.sendALL
-        if distance >= 5:
-            self.byz.sendMinedBlocks(5)
+        if distance >= 3:
+            self.byz.sendAllMined()
             distance = self.byz.getAdvance()
             secretHeight = self.byz.getSecretBlockSize()
             return np.array(self.state), reward, done,{}
