@@ -75,6 +75,14 @@ def start(type_of_action,EPSILON):
                 break
                 time.sleep(0.1)
         average_payouts.append(total_payout)
+        average_payouts.append(total_payout)
+        if episode%200==0:
+            plt.plot(average_payouts[-200:])
+            plt.xlabel('Episodes in range {}'.format(episode))
+            plt.ylabel('ETH Payout in an hour')
+            plt.savefig('q_learning_range_%s'%episode)
+            plt.clf()
+
 
     print(Q)
     plt.plot(average_payouts)                
