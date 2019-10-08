@@ -55,6 +55,7 @@ class PoWEnv(gym.Env):
         if sim_t>=3600:
             real_reward = self.byz.getReward()
             done = True
+            self.byz.info()
             return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":real_reward}       
         #force to publish call something like p.sendALL
         if distance >= 10:

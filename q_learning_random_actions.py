@@ -17,10 +17,9 @@ print(Q)
 def choose_action(state,_epsilon):
     action=0
     if np.random.uniform(0, 1) <_epsilon:
-        action = env.action_space.sample()
+        return env.action_space.sample(), True
     else:
-        action = np.argmax(Q[state[1], :])
-    return action
+        return np.argmax(Q[state[1], :]), False
 
 def choose_random_action():
     action = env.action_space.sample()
@@ -55,14 +54,15 @@ def start(type_of_action,EPSILON):
         while done is False:
             #env.render()
             max_steps+=1
+            rd = False
             if(type_of_action=="random"):
              
                 action = choose_random_action()
             elif(type_of_action=="honest"):
                 action = choose_honest_action()
             else:
-                action = choose_action(state,epsilon) 
-            print("action: ",action)
+                action, rd = choose_action(state,epsilon) 
+            print("action: ",action, rd)
 
             state2, reward, done, info = env.step(action)  
             print("STATE: ",state2)
