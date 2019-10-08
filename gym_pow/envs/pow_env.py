@@ -33,6 +33,7 @@ class PoWEnv(gym.Env):
             self.high = np.array([self.max_distance, self.max_secret_chain])
             self.observation_space = spaces.Box(self.low, self.high, dtype=np.int32)
             self.reward = 0
+            self.old_count = 0
             self.seed(1)
             self.p.network().printNetworkLatency() 
 
@@ -49,11 +50,14 @@ class PoWEnv(gym.Env):
         mined = self.byz.goNextStep()
         distance = self.byz.getAdvance()
         secretHeight = self.byz.getSecretBlockSize()
+        newCount =  self.byz.countMyBlocks()
+        reward =  newCount - self.old_count
+        self.old_count = newCount
         assert mined is True
         #if self.byz.head.height==self.MAX_HEIGHT:
         sim_t = self.p.getTimeInSeconds()
         if sim_t>=3600:
-            reward = self.byz.getRewardRatio()
+            #reward = self.byz.getRewardRatio()
             done = True
             self.byz.info()
             return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":reward}       
@@ -94,6 +98,7 @@ class PoWEnv(gym.Env):
         self.byz= self.p.getByzNode()
         self.state = np.array((0,0))
         self.reward = 0
+        self.old_count = 0
         self.seed(1)
         self.p.network().printNetworkLatency() 
         return np.array(self.state)
