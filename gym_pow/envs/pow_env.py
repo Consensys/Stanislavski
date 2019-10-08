@@ -68,21 +68,17 @@ class PoWEnv(gym.Env):
             secretHeight = self.byz.getSecretBlockSize()
             self.state = (distance,secretHeight)
             return np.array(self.state), reward, done,{"msg":"last step","time":self.p.getTimeInSeconds(),"amount":0}
-        elif self.validAction(action,secretHeight) is True:
-            if action ==0:
-                self.byz.sendMinedBlocks(0)
-            elif action ==1:
-                self.byz.sendMinedBlocks(1)
-            elif action == 2:
-                self.byz.sendMinedBlocks(2)
-            elif action ==3:
-                self.byz.sendMinedBlocks(3)
-            distance = self.byz.getAdvance()
-            secretHeight = self.byz.getSecretBlockSize()
-            self.state = (distance,secretHeight)
-        else:
-            self.state = (distance,secretHeight)
-            return np.array(self.state), reward, done, {"msg":"invalid action", "time":self.p.getTimeInSeconds(),"amount":0}
+        if action ==0:
+            self.byz.sendMinedBlocks(0)
+        elif action ==1:
+            self.byz.sendMinedBlocks(1)
+        elif action == 2:
+            self.byz.sendMinedBlocks(2)
+        elif action ==3:
+            self.byz.sendMinedBlocks(3)
+        distance = self.byz.getAdvance()
+        secretHeight = self.byz.getSecretBlockSize()
+        self.state = (distance,secretHeight)
         return np.array(self.state), reward, done, {"msg":"valid","time":self.p.getTimeInSeconds(),"amount":0}
 # Should return 4 values, an Object, a float, boolean, dict
 
