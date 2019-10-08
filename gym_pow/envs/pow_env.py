@@ -53,7 +53,7 @@ class PoWEnv(gym.Env):
         #if self.byz.head.height==self.MAX_HEIGHT:
         sim_t = self.p.getTimeInSeconds()
         if sim_t>=3600:
-            reward = self.byz.getReward()
+            reward = self.byz.getRewardRatio()
             done = True
             self.byz.info()
             return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":reward}       
