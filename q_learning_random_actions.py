@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 env = gym.make('pow-v0')# Change to 40% hashpower
 
-total_episodes = 3000
+total_episodes = 5000
 lr_rate = 0.8
 gamma = 0.9
 
@@ -40,7 +40,7 @@ def start(type_of_action,EPSILON):
     t = 0
     epsilon = EPSILON
     START_EPSILON_DECAYING = 100
-    END_EPSILON_DECAYING = total_episodes//2
+    END_EPSILON_DECAYING = total_episodes
     epsilon_decay_value = epsilon/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
     episode=0
     while True:
