@@ -58,6 +58,7 @@ def start(type_of_action,EPSILON):
             if(type_of_action=="random"):
              
                 action = choose_random_action()
+
             elif(type_of_action=="honest"):
                 action = choose_honest_action()
             else:
@@ -108,7 +109,7 @@ def start(type_of_action,EPSILON):
 def main():
     '''start("random",1)
     start("honest",1)'''
-    start("agent",0.5)
+    start("agent",1)
 
 
 if __name__ == '__main__':
