@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 
 env = gym.make('pow-v0')# Change to 40% hashpower
 
-total_episodes = 5000
 lr_rate = 0.1
 gamma = 0.9
 
@@ -28,28 +27,31 @@ def choose_random_action():
 def choose_honest_action():
     return 1
 
-def learn(state, state2, reward, action):
+def learn(state, state2, reward, action, episode):
     predict = Q[state[1], action]
-    print("predicted value", predict)
+    if episode % 100 == 0:
+        print("predicted value", predict)
     target = reward + gamma * np.max(Q[state2[1], :])
     Q[state[1], action] = Q[state[1], action] + lr_rate * (target - predict)
 
 # Start
-def start(type_of_action,EPSILON):
+def start(type_of_action):
     average_payouts = []
     t = 0
-    epsilon = EPSILON
-    START_EPSILON_DECAYING = 100
-    END_EPSILON_DECAYING = total_episodes
-    epsilon_decay_value = epsilon/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
     episode=0
     while True:
         episode+=1
+        if episode % 10 == 0:
+            epsilon = 0
+        else:
+            epsilon = 0.10
+            if episode < 500:
+                epsilon = 0.5
+
         state = env.reset()
         done = False
         total_payout = 0
-        if(t%10==0):
-            print("Episode",t)
+        print("Episode",t)
         max_steps=0
         while done is False:
             #env.render()
@@ -63,44 +65,29 @@ def start(type_of_action,EPSILON):
                 action = choose_honest_action()
             else:
                 action, rd = choose_action(state,epsilon) 
-            print("action: ",action, rd)
+            
+            state2, reward, done, info = env.step(action,epsilon) 
 
-            state2, reward, done, info = env.step(action)  
-            print("STATE: ",state2)
-            print("----INFO---- ",info)
-            learn(state, state2, reward, action)
+            if episode % 100 == 0: 
+                print("action: ",action, rd)
+                print("STATE: ",state2)
+                print("----INFO---- ",info)
+
+            learn(state, state2, reward, action, episode)
             total_payout+=info['amount']
             state = state2
-            if END_EPSILON_DECAYING >= episode >= START_EPSILON_DECAYING:
-                epsilon -= epsilon_decay_value
-                if epsilon <=0.02:
-                    epsilon = 0.02
 
             if done:
                 t+=1
                 break
-                time.sleep(0.1)
         average_payouts.append(total_payout)
-        average_payouts.append(total_payout)
+
         if episode%1000==0:
             plt.plot(average_payouts[-1000:])
             plt.xlabel('Episodes in range {} {}'.format(episode,type_of_action))
             plt.ylabel('ETH Payout in an hour')
             plt.savefig('q_learning_range_%s'%episode)
             plt.clf()
-
-
-    print(Q)
-    plt.plot(average_payouts)                
-    plt.xlabel('total_episodes')
-    plt.ylabel('ETH payout after 1 hour')
-    plt.savefig("Q_learning_GRAPH_%s"%type_of_action)
-    plt.clf()    
-    print ("Average payout after {} rounds is {}".format(max_steps, sum(average_payouts)/total_episodes))
-
-    with open("pow_qTable.pkl", 'wb') as f:
-        pickle.dump(Q, f)
-
 
 '''def print_graph_periodically(period):
     plt.plot()#stored data per period
@@ -109,7 +96,7 @@ def start(type_of_action,EPSILON):
 def main():
     '''start("random",1)
     start("honest",1)'''
-    start("agent",1)
+    start("agent")
 
 
 if __name__ == '__main__':

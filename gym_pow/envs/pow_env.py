@@ -26,10 +26,10 @@ class PoWEnv(gym.Env):
             self.p.init()
             self.byz= self.p.getByzNode()
             #represents number of blocks you can go forward into on the main chain
-            self.min_distance = -3
-            self.max_distance = 3
-            self.max_secret_chain =3
-            self.low = np.array([self.min_distance,-self.max_distance ])
+            self.min_distance = 0
+            self.max_distance = 10
+            self.max_secret_chain =10
+            self.low = np.array([self.min_distance,self.max_distance ])
             self.high = np.array([self.max_distance, self.max_secret_chain])
             self.observation_space = spaces.Box(self.low, self.high, dtype=np.int32)
             self.reward = 0
@@ -41,10 +41,9 @@ class PoWEnv(gym.Env):
             self.np_random, seed = seeding.np_random(seed)
             return [seed]
 
-    def step(self, action):
+    def step(self, action, epsilon):
         #Replace miner with getMined to Send
         assert self.action_space.contains(action)
-        reward = 0
         done = False
         #Mine until you have a valid block
         mined = self.byz.goNextStep()
@@ -56,11 +55,12 @@ class PoWEnv(gym.Env):
         assert mined is True
         #if self.byz.head.height==self.MAX_HEIGHT:
         sim_t = self.p.getTimeInSeconds()
-        if sim_t>=3600:
-            #reward = self.byz.getRewardRatio()
+        if sim_t>=16000:
+            eth_reward = self.byz.getReward()
             done = True
             self.byz.info()
-            return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":reward}       
+            print("REWARD RATIO: ",self.byz.getRewardRatio(), epsilon)
+            return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":eth_reward}       
         #force to publish call something like p.sendALL
         if distance >= 10:
             self.byz.sendMinedBlocks(1)
