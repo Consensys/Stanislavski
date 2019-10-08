@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 env = gym.make('pow-v0')# Change to 40% hashpower
 
-total_episodes = 10000
+total_episodes = 3000
 lr_rate = 0.8
 gamma = 0.9
 
@@ -40,10 +40,12 @@ def start(type_of_action,EPSILON):
     average_payouts = []
     t = 0
     epsilon = EPSILON
-    START_EPSILON_DECAYING = 1
+    START_EPSILON_DECAYING = 100
     END_EPSILON_DECAYING = total_episodes//2
     epsilon_decay_value = epsilon/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
-    for episode in range(total_episodes):
+    episode=0
+    while True:
+        episode+=1
         state = env.reset()
         done = False
         total_payout = 0
@@ -66,18 +68,21 @@ def start(type_of_action,EPSILON):
             print("STATE: ",state2)
             print("----INFO---- ",info)
             learn(state, state2, reward, action)
-            total_payout+=reward
+            total_payout+=info['amount']
             state = state2
             if END_EPSILON_DECAYING >= episode >= START_EPSILON_DECAYING:
                 epsilon -= epsilon_decay_value
+                if epsilon <=0.02:
+                    epsilon = 0.02
+
             if done:
                 t+=1
                 break
                 time.sleep(0.1)
         average_payouts.append(total_payout)
         average_payouts.append(total_payout)
-        if episode%200==0:
-            plt.plot(average_payouts[-200:])
+        if episode%1000==0:
+            plt.plot(average_payouts[-1000:])
             plt.xlabel('Episodes in range {} {}'.format(episode,type_of_action))
             plt.ylabel('ETH Payout in an hour')
             plt.savefig('q_learning_range_%s'%episode)
@@ -103,7 +108,7 @@ def start(type_of_action,EPSILON):
 def main():
     '''start("random",1)
     start("honest",1)'''
-    start("agent",1)
+    start("agent",0.5)
 
 
 if __name__ == '__main__':
