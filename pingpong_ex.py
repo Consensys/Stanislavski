@@ -1,4 +1,5 @@
 import gym
+import gym_pow
 import numpy as np
 
 def downsample(image):
@@ -17,9 +18,9 @@ def remove_background(image):
 def preprocess_observations(input_observation, prev_processed_observation, input_dimensions):
     """ convert the 210x160x3 uint8 frame into a 6400 float vector """
     processed_observation = input_observation[35:195] # crop
-    processed_observation = downsample(processed_observation)
+    '''processed_observation = downsample(processed_observation)
     processed_observation = remove_color(processed_observation)
-    processed_observation = remove_background(processed_observation)
+    processed_observation = remove_background(processed_observation)'''
     processed_observation[processed_observation != 0] = 1 # everything else (paddles, ball) just set to 1
     # Convert from 80 x 80 matrix to 1600 x 1 matrix
     processed_observation = processed_observation.astype(np.float).ravel()
@@ -101,7 +102,7 @@ def discount_with_rewards(gradient_log_p, episode_rewards, gamma):
 
 
 def main():
-    env = gym.make("Pong-v0")
+    env = gym.make("pow-v0")
     observation = env.reset() # This gets us the image
 
     # hyperparameters

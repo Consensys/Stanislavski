@@ -10,7 +10,7 @@ from keras.optimizers import Adam
 
 #from scores.score_logger import ScoreLogger
 
-ENV_NAME = "pow-v0"
+ENV_NAME = "CartPole-v0"
 
 GAMMA = 0.95
 LEARNING_RATE = 0.001
@@ -75,7 +75,7 @@ def cartpole():
         step = 0
         while True:
             step += 1
-            #env.render()
+            env.render()
             action = dqn_solver.act(state)
             state_next, reward, terminal, info = env.step(action)
             reward = reward if not terminal else -reward

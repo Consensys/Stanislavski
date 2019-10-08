@@ -41,7 +41,7 @@ class PoWEnv(gym.Env):
             self.np_random, seed = seeding.np_random(seed)
             return [seed]
 
-    def step(self, action, epsilon):
+    def step(self, action, episode,epsilon):
         #Replace miner with getMined to Send
         assert self.action_space.contains(action)
         done = False
@@ -58,8 +58,9 @@ class PoWEnv(gym.Env):
         if sim_t>=16000:
             eth_reward = self.byz.getReward()
             done = True
-            self.byz.info()
+            
             ratio = self.byz.getRewardRatio()
+            self.byz.info(episode,epsilon,ratio, eth_reward)
             #print("REWARD RATIO: ",self.byz.getRewardRatio(), epsilon)
             return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":eth_reward,"ratio":ratio}       
         #force to publish call something like p.sendALL
