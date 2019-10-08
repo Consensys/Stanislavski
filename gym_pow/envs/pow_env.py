@@ -59,8 +59,9 @@ class PoWEnv(gym.Env):
             eth_reward = self.byz.getReward()
             done = True
             self.byz.info()
-            print("REWARD RATIO: ",self.byz.getRewardRatio(), epsilon)
-            return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":eth_reward}       
+            ratio = self.byz.getRewardRatio()
+            #print("REWARD RATIO: ",self.byz.getRewardRatio(), epsilon)
+            return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":eth_reward,"ratio":ratio}       
         #force to publish call something like p.sendALL
         if distance >= 10:
             self.byz.sendMinedBlocks(1)

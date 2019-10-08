@@ -66,7 +66,9 @@ def start(type_of_action):
             else:
                 action, rd = choose_action(state,epsilon) 
             
-            state2, reward, done, info = env.step(action,epsilon) 
+            state2, reward, done, info = env.step(action,epsilon)
+            if done is True:
+                print("REWARD RATIO: ",info['ratio']," epsilon ", epsilon) 
 
             if episode % 100 == 0: 
                 print("action: ",action, rd)
