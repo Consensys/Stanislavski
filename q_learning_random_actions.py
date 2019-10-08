@@ -16,7 +16,7 @@ print(Q)
     
 def choose_action(state,_epsilon):
     action=0
-    if np.random.uniform(0, 1) >_epsilon:
+    if np.random.uniform(0, 1) <_epsilon:
         action = env.action_space.sample()
     else:
         action = np.argmax(Q[state[1], :])
@@ -101,8 +101,8 @@ def start(type_of_action,EPSILON):
     plt.xlabel()'''
 
 def main():
-    start("random",1)
-    start("honest",1)
+    '''start("random",1)
+    start("honest",1)'''
     start("agent",1)
 
 
