@@ -10,7 +10,7 @@ from jnius import autoclass
 # Possible Observations miner, hashrate ratio, revenue ratio, revenue, uncle rate, total revenue, avg difficulty
 
 class PoWEnv(gym.Env):   
-    def __init__(self, slip=.6):
+    def __init__(self, slip=.4):
             self.slip = slip  # probability of 'finding' a valid block
             '''Action Space represents the actions you can take go forwards on the main chain, 
             go to the side and create a fork, or do nothing
@@ -86,14 +86,14 @@ class PoWEnv(gym.Env):
         #reward =  newCount - self.old_count
         #self.old_count = newCount
         newCount = self.byz.getAdvance()
-        if newCount > 1:
-                newCount = 1
+        if newCount >= 1:
+                newCount = 0.2
         else:
-            if self.byz.iamAhead():
+            if self.byz.iamAhead() is False:
                 newCount = -1
         reward = newCount - self.old_count
         self.old_count = newCount
-        return reward
+        return reward - 0.1
 
     def validAction(self, action,secretHeight):
         if secretHeight>= action:
@@ -102,7 +102,7 @@ class PoWEnv(gym.Env):
         return False
 
     def reset(self):
-        self.slip = 0.6  # probability of 'finding' a valid block
+        self.slip = 0.4  # probability of 'finding' a valid block
         self.action_space = spaces.Discrete(4)
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
