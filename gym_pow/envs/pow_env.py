@@ -35,7 +35,6 @@ class PoWEnv(gym.Env):
             self.reward = 0
             self.old_count = 0
             self.seed(1)
-            self.p.network().printNetworkLatency() 
 
     def seed(self, seed):
             self.np_random, seed = seeding.np_random(seed)
@@ -49,17 +48,16 @@ class PoWEnv(gym.Env):
         mined = self.byz.goNextStep()
         distance = self.byz.getAdvance()
         secretHeight = self.byz.getSecretBlockSize()
-        newCount =  self.byz.countMyBlocks()
-        reward =  newCount - self.old_count
-        self.old_count = newCount
         assert mined is True
         #if self.byz.head.height==self.MAX_HEIGHT:
         if self.byz.countMyBlocks()>=1000:
             eth_reward = self.byz.getReward()
             done = True
+            newCount =  self.byz.countMyBlocks()
+            reward =  newCount - self.old_count
+            self.old_count = newCount
             ratio = self.byz.getRewardRatio()
             self.byz.info(episode,epsilon,ratio, eth_reward)
-            #print("REWARD RATIO: ",self.byz.getRewardRatio(), epsilon)
             return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":eth_reward,"ratio":ratio}       
         #force to publish call something like p.sendALL
         if distance >= 10:
@@ -104,7 +102,6 @@ class PoWEnv(gym.Env):
         self.reward = 0
         self.old_count = 0
         self.seed(1)
-        self.p.network().printNetworkLatency() 
         return np.array(self.state)
         
 
