@@ -58,6 +58,7 @@ class PoWEnv(gym.Env):
             self.old_count = newCount
             ratio = self.byz.getRewardRatio()
             self.byz.info(episode,epsilon,ratio, eth_reward)
+
             return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":eth_reward,"ratio":ratio}       
         #force to publish call something like p.sendALL
         if distance >= 10:

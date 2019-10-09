@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 
 env = gym.make('pow-v0')# Change to 40% hashpower
 
-lr_rate = 0.5
+lr_rate = 0.1
 gamma = 0.95
 
 Q = np.zeros((100, env.action_space.n))
-print(Q)
+
 
     
 def choose_action(state,_epsilon):
@@ -18,7 +18,7 @@ def choose_action(state,_epsilon):
     if np.random.uniform(0, 1) <_epsilon:
         return env.action_space.sample(), True
     else:
-        return np.argmax(Q[state[1], :]), False
+        return np.argmax(Q[state[0], :]), False
 
 def choose_random_action():
     action = env.action_space.sample()
@@ -28,11 +28,11 @@ def choose_honest_action():
     return 1
 
 def learn(state, state2, reward, action, episode):
-    predict = Q[state[1], action]
+    predict = Q[state[0], action]
     if episode % 100 == 0:
         print("predicted value", predict)
-    target = reward + gamma * np.max(Q[state2[1], :])
-    Q[state[1], action] = Q[state[1], action] + lr_rate * (target - predict)
+    target = reward + gamma * np.max(Q[state2[0], :])
+    Q[state[0], action] = Q[state[0], action] + lr_rate * (target - predict)
 
 # Start
 def start(type_of_action):
@@ -85,6 +85,7 @@ def start(type_of_action):
         average_payouts.append(total_payout)
 
         if episode%1000==0:
+            print(Q)
             plt.plot(average_payouts[-1000:])
             plt.xlabel('Episodes in range {} {}'.format(episode,type_of_action))
             plt.ylabel('ETH Payout in an hour')
