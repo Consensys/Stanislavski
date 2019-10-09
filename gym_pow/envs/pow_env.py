@@ -53,22 +53,18 @@ class PoWEnv(gym.Env):
         if self.byz.countMyBlocks()>=1000:
             eth_reward = self.byz.getReward()
             done = True
-            newCount =  self.byz.countMyBlocks()
-            reward =  newCount - self.old_count
-            self.old_count = newCount
+            reward = self.getReward()
             ratio = self.byz.getRewardRatio()
             self.byz.info(episode,epsilon,ratio, eth_reward)
 
             return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":eth_reward,"ratio":ratio}       
         #force to publish call something like p.sendALL
-        if distance >= 10:
+        if secretHeight >= 10:
             self.byz.sendMinedBlocks(1)
             distance = self.byz.getAdvance()
             secretHeight = self.byz.getSecretBlockSize()
             self.state = (distance,secretHeight)
-            newCount =  self.byz.countMyBlocks()
-            reward =  newCount - self.old_count
-            self.old_count = newCount
+            reward = self.getReward()
             return np.array(self.state), reward, done,{"msg":"last step","time":self.p.getTimeInSeconds(),"amount":0}
         if action ==0:
             self.byz.sendMinedBlocks(0)
@@ -81,11 +77,23 @@ class PoWEnv(gym.Env):
         distance = self.byz.getAdvance()
         secretHeight = self.byz.getSecretBlockSize()
         self.state = (distance,secretHeight)
-        newCount =  self.byz.countMyBlocks()
-        reward =  newCount - self.old_count
-        self.old_count = newCount
+        reward = self.getReward()
         return np.array(self.state), reward, done, {"msg":"valid","time":self.p.getTimeInSeconds(),"amount":0}
 # Should return 4 values, an Object, a float, boolean, dict
+
+    def getReward(self):
+        #newCount =  self.byz.countMyBlocks()
+        #reward =  newCount - self.old_count
+        #self.old_count = newCount
+        newCount = self.byz.getAdvance()
+        if newCount > 1:
+                newCount = 1
+        else:
+            if self.byz.iamAhead():
+                newCount = -1
+        reward = newCount - self.old_count
+        self.old_count = newCount
+        return reward
 
     def validAction(self, action,secretHeight):
         if secretHeight>= action:
