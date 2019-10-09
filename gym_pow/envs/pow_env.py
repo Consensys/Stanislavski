@@ -54,11 +54,9 @@ class PoWEnv(gym.Env):
         self.old_count = newCount
         assert mined is True
         #if self.byz.head.height==self.MAX_HEIGHT:
-        sim_t = self.p.getTimeInSeconds()
-        if sim_t>=16000:
+        if self.byz.countMyBlocks()>=1000:
             eth_reward = self.byz.getReward()
             done = True
-            
             ratio = self.byz.getRewardRatio()
             self.byz.info(episode,epsilon,ratio, eth_reward)
             #print("REWARD RATIO: ",self.byz.getRewardRatio(), epsilon)
@@ -69,6 +67,9 @@ class PoWEnv(gym.Env):
             distance = self.byz.getAdvance()
             secretHeight = self.byz.getSecretBlockSize()
             self.state = (distance,secretHeight)
+            newCount =  self.byz.countMyBlocks()
+            reward =  newCount - self.old_count
+            self.old_count = newCount
             return np.array(self.state), reward, done,{"msg":"last step","time":self.p.getTimeInSeconds(),"amount":0}
         if action ==0:
             self.byz.sendMinedBlocks(0)
@@ -81,6 +82,9 @@ class PoWEnv(gym.Env):
         distance = self.byz.getAdvance()
         secretHeight = self.byz.getSecretBlockSize()
         self.state = (distance,secretHeight)
+        newCount =  self.byz.countMyBlocks()
+        reward =  newCount - self.old_count
+        self.old_count = newCount
         return np.array(self.state), reward, done, {"msg":"valid","time":self.p.getTimeInSeconds(),"amount":0}
 # Should return 4 values, an Object, a float, boolean, dict
 

@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 
 env = gym.make('pow-v0')# Change to 40% hashpower
 
-lr_rate = 0.1
-gamma = 0.9
+lr_rate = 0.5
+gamma = 0.95
 
 Q = np.zeros((100, env.action_space.n))
 print(Q)
