@@ -1,20 +1,16 @@
 import gym
 import gym_pow
-import numpy as np
-import time, pickle, os
 import matplotlib.pyplot as plt
+import numpy as np
 
-env = gym.make('pow-v0')# Change to 40% hashpower
+env = gym.make('pow-v0')
 
-lr_rate = 0.1
-gamma = 0.95
+lr_rate = 0.2
+gamma = 0.3
 
 Q = np.zeros((100, env.action_space.n))
 
-
-    
 def choose_action(state,_epsilon):
-    action=0
     if np.random.uniform(0, 1) <_epsilon:
         return env.action_space.sample(), True
     else:
@@ -34,24 +30,28 @@ def learn(state, state2, reward, action, episode):
     target = reward + gamma * np.max(Q[state2[0], :])
     Q[state[0], action] = Q[state[0], action] + lr_rate * (target - predict)
 
-# Start
 def start(type_of_action):
     average_payouts = []
     t = 0
     episode=0
     while True:
         episode+=1
-        if episode % 10 == 0:
+
+        epsilon = 0.05
+        if episode < 1000:
+            episode = 0.10
+        elif episode < 500:
+            epsilon = 0.2
+        elif episode < 200:
+            epsilon = 0.5
+        if episode % 100 == 0:
             epsilon = 0
-        else:
-            epsilon = 0.10
-            if episode < 500:
-                epsilon = 0.5
+        if epsilon % 55 == 0:
+            epsilon = .20
 
         state = env.reset()
         done = False
         total_payout = 0
-        print("Episode",t)
         max_steps=0
         while done is False:
             #env.render()
@@ -65,8 +65,6 @@ def start(type_of_action):
                 action, rd = choose_action(state,epsilon) 
             
             state2, reward, done, info = env.step(action,episode,epsilon)
-            if done is True:
-                print("REWARD RATIO: ",info['ratio']," epsilon ", epsilon, "episode", episode)
 
             if episode % 1000 == 0:
                 print("action: ",action, rd)
@@ -78,11 +76,12 @@ def start(type_of_action):
             state = state2
 
             if done:
-                t+=1
-                break
+                print("REWARD RATIO: ",info['ratio']," epsilon ", epsilon, "episode", episode, "hp:", info['hp'], "alpha", lr_rate, "gamma", gamma)
+
+        t+=1
         average_payouts.append(total_payout)
 
-        if episode%1000==0:
+        if episode%1000==0 and False:
             print(Q)
             plt.plot(average_payouts[-1000:])
             plt.xlabel('Episodes in range {} {}'.format(episode,type_of_action))

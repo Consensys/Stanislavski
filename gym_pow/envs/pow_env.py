@@ -34,45 +34,41 @@ class PoWEnv(gym.Env):
             self.np_random, seed = seeding.np_random(seed)
             return [seed]
 
-    def step(self, action, episode,epsilon):
-        #Replace miner with getMined to Send
-        assert self.action_space.contains(action)
-        done = False
-        #Mine until you have a valid block
-        mined = self.byz.goNextStep()
-        distance = self.byz.getAdvance()
-        secretHeight = self.byz.getSecretBlockSize()
-        assert mined is True
-        #if self.byz.head.height==self.MAX_HEIGHT:
-        if self.byz.countMyBlocks()>=1000:
-            eth_reward = self.byz.getReward()
-            done = True
-            reward = self.getReward()
-            ratio = self.byz.getRewardRatio()
-            self.byz.info(episode,epsilon,ratio, eth_reward)
+    def step(self, action, episode, epsilon):
 
-            return np.array(self.state), reward, done, {"msg":"last step","time":self.p.getTimeInSeconds(),"amount":eth_reward,"ratio":ratio}       
-        #force to publish call something like p.sendALL
-        if secretHeight >= 10:
+        assert self.action_space.contains(action)
+
+        self.byz.goNextStep()
+        secretHeight = self.byz.getSecretBlockSize()
+
+        done = False
+        if self.byz.countMyBlocks()>=1000:
+            done = True
+        elif secretHeight >= 10: #ok, so we ask for an action but we actually ignore it. Should this be moved to wittgenstein?
             self.byz.sendMinedBlocks(1)
-            distance = self.byz.getAdvance()
-            secretHeight = self.byz.getSecretBlockSize()
-            self.state = (distance,secretHeight)
-            reward = self.getReward()
-            return np.array(self.state), reward, done,{"msg":"last step","time":self.p.getTimeInSeconds(),"amount":0}
-        if action ==0:
+        elif action ==0:
             self.byz.sendMinedBlocks(0)
         elif action ==1:
             self.byz.sendMinedBlocks(1)
         elif action == 2:
             self.byz.sendMinedBlocks(2)
-        elif action ==3:
+        elif action == 3:
             self.byz.sendMinedBlocks(3)
+
         distance = self.byz.getAdvance()
         secretHeight = self.byz.getSecretBlockSize()
         self.state = (distance,secretHeight)
         reward = self.getReward()
-        return np.array(self.state), reward, done, {"msg":"valid","time":self.p.getTimeInSeconds(),"amount":0}
+
+        if done:
+            eth_reward = self.byz.getReward()
+            ratio = self.byz.getRewardRatio()
+            info = {"hp":self.slip, "msg":"last step","time":self.p.getTimeInSeconds(),"amount":eth_reward,"ratio":ratio}
+        else:
+            info = {"hp":self.slip, "msg":"valid","time":self.p.getTimeInSeconds(),"amount":0}
+
+        return np.array(self.state), reward, done, info
+
 # Should return 4 values, an Object, a float, boolean, dict
 
     def getReward(self):
