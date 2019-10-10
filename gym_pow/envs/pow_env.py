@@ -21,10 +21,6 @@ class PoWEnv(gym.Env):
                 3 add 1 block to private chain
                 if you have already 2 blocks in a secret chain and you mine a new one you will automatically publish
             '''
-            self.action_space = spaces.Discrete(4)
-            self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
-            self.p.init()
-            self.byz= self.p.getByzNode()
             #represents number of blocks you can go forward into on the main chain
             self.min_distance = 0
             self.max_distance = 10
@@ -32,9 +28,7 @@ class PoWEnv(gym.Env):
             self.low = np.array([self.min_distance,self.max_distance ])
             self.high = np.array([self.max_distance, self.max_secret_chain])
             self.observation_space = spaces.Box(self.low, self.high, dtype=np.int32)
-            self.reward = 0
-            self.old_count = 0
-            self.seed(1)
+            self.reset()
 
     def seed(self, seed):
             self.np_random, seed = seeding.np_random(seed)
@@ -82,18 +76,15 @@ class PoWEnv(gym.Env):
 # Should return 4 values, an Object, a float, boolean, dict
 
     def getReward(self):
-        #newCount =  self.byz.countMyBlocks()
-        #reward =  newCount - self.old_count
-        #self.old_count = newCount
-        newCount = self.byz.getAdvance()
-        if newCount >= 1:
-                newCount = 0.2
+        if self.byz.iamAhead() is False:
+            newCount = -1
+        elif self.byz.getSecretBlockSize() > 0:
+            newCount = 1.1
         else:
-            if self.byz.iamAhead() is False:
-                newCount = -1
+            newCount = 1
         reward = newCount - self.old_count
         self.old_count = newCount
-        return reward - 0.1
+        return reward - 0.01
 
     def validAction(self, action,secretHeight):
         if secretHeight>= action:
@@ -102,21 +93,17 @@ class PoWEnv(gym.Env):
         return False
 
     def reset(self):
-        self.slip = 0.4  # probability of 'finding' a valid block
         self.action_space = spaces.Discrete(4)
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
         self.byz= self.p.getByzNode()
         self.state = np.array((0,0))
-        self.reward = 0
         self.old_count = 0
         self.seed(1)
         return np.array(self.state)
-        
 
     def render(self):
         print('\n',self.byz.minedToSend)
-           
 
     def get_hashPower(self,x):
         return self.p.avgDifficulty(k)
@@ -132,5 +119,3 @@ class PoWEnv(gym.Env):
         values = np.array(Q[state,a] for a in actions)
         action = np.argmax(values)
         return actions[action]
-
-   

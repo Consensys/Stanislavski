@@ -58,9 +58,7 @@ def start(type_of_action):
             max_steps+=1
             rd = False
             if(type_of_action=="random"):
-             
                 action = choose_random_action()
-
             elif(type_of_action=="honest"):
                 action = choose_honest_action()
             else:
@@ -68,9 +66,9 @@ def start(type_of_action):
             
             state2, reward, done, info = env.step(action,episode,epsilon)
             if done is True:
-                print("REWARD RATIO: ",info['ratio']," epsilon ", epsilon) 
+                print("REWARD RATIO: ",info['ratio']," epsilon ", epsilon, "episode", episode)
 
-            if episode % 100 == 0: 
+            if episode % 1000 == 0:
                 print("action: ",action, rd)
                 print("STATE: ",state2)
                 print("----INFO---- ",info)
