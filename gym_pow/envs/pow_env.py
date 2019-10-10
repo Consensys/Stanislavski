@@ -24,7 +24,7 @@ class PoWEnv(gym.Env):
             #represents number of blocks you can go forward into on the main chain
             self.min_distance = 0
             self.max_distance = 10
-            self.max_secret_chain =10
+            self.max_secret_chain = 10
             self.low = np.array([self.min_distance,self.max_distance ])
             self.high = np.array([self.max_distance, self.max_secret_chain])
             self.observation_space = spaces.Box(self.low, self.high, dtype=np.int32)
@@ -92,7 +92,7 @@ class PoWEnv(gym.Env):
         self.action_space = spaces.Discrete(4)
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
-        self.byz= self.p.getByzNode()
+        self.byz = self.p.getByzNode()
         self.state = np.array((0,0))
         self.old_count = 0
         self.seed(1)

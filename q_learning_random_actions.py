@@ -1,11 +1,11 @@
 import gym
 import gym_pow
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 
 env = gym.make('pow-v0')
 
-lr_rate = 0.2
+lr_rate = 0.01
 gamma = 0.3
 
 Q = np.zeros((100, env.action_space.n))
@@ -32,22 +32,21 @@ def learn(state, state2, reward, action, episode):
 
 def start(type_of_action):
     average_payouts = []
-    t = 0
-    episode=0
+    episode = 0
     while True:
-        episode+=1
+        episode += 1
 
         epsilon = 0.05
-        if episode < 1000:
-            episode = 0.10
-        elif episode < 500:
+        if episode < 2000:
+            epsilon = 0.10
+        if episode < 500:
             epsilon = 0.2
-        elif episode < 200:
+        if episode < 200:
             epsilon = 0.5
         if episode % 100 == 0:
             epsilon = 0
-        if epsilon % 55 == 0:
-            epsilon = .20
+        if episode % 55 == 0:
+            epsilon = 0.20
 
         state = env.reset()
         done = False
@@ -78,16 +77,15 @@ def start(type_of_action):
             if done:
                 print("REWARD RATIO: ",info['ratio']," epsilon ", epsilon, "episode", episode, "hp:", info['hp'], "alpha", lr_rate, "gamma", gamma)
 
-        t+=1
         average_payouts.append(total_payout)
 
-        if episode%1000==0 and False:
+        '''if episode%1000==0 and False:
             print(Q)
             plt.plot(average_payouts[-1000:])
             plt.xlabel('Episodes in range {} {}'.format(episode,type_of_action))
             plt.ylabel('ETH Payout in an hour')
             plt.savefig('q_learning_range_%s'%episode)
-            plt.clf()
+            plt.clf()'''
 
 '''def print_graph_periodically(period):
     plt.plot()#stored data per period
