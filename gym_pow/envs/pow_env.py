@@ -31,10 +31,10 @@ class PoWEnv(gym.Env):
             self.reset()
 
     def seed(self, seed):
-            self.np_random, seed = seeding.np_random(seed)
+            self.np_random, seed = seeding.np_random()
             return [seed]
 
-    def step(self, action, episode, epsilon):
+    def step(self, action):
 
         assert self.action_space.contains(action)
 

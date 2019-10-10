@@ -25,8 +25,8 @@ def choose_honest_action():
 
 def learn(state, state2, reward, action, episode):
     predict = Q[state[0], action]
-    if episode % 100 == 0:
-        print("predicted value", predict)
+    '''if episode % 500 == 0:
+        print("predicted value", predict)'''
     target = reward + gamma * np.max(Q[state2[0], :])
     Q[state[0], action] = Q[state[0], action] + lr_rate * (target - predict)
 
@@ -36,17 +36,21 @@ def start(type_of_action):
     while True:
         episode += 1
 
-        epsilon = 0.05
-        if episode < 2000:
+        epsilon = 0.001
+        if episode < 10000:
+            epsilon = 0.01
+        if episode < 5000:
+            epsilon = 0.05
+        if episode < 3000:
             epsilon = 0.10
         if episode < 500:
             epsilon = 0.2
         if episode < 200:
-            epsilon = 0.5
+            epsilon = 0.40
         if episode % 100 == 0:
             epsilon = 0
         if episode % 55 == 0:
-            epsilon = 0.20
+            epsilon *= 2
 
         state = env.reset()
         done = False
@@ -63,9 +67,9 @@ def start(type_of_action):
             else:
                 action, rd = choose_action(state,epsilon) 
             
-            state2, reward, done, info = env.step(action,episode,epsilon)
+            state2, reward, done, info = env.step(action)
 
-            if episode % 1000 == 0:
+            if episode % 500 == 0:
                 print("action: ",action, rd)
                 print("STATE: ",state2)
                 print("----INFO---- ",info)
