@@ -42,7 +42,8 @@ class PoWEnv(gym.Env):
         secretHeight = self.byz.getSecretBlockSize()
 
         done = False
-        if self.byz.countMyBlocks()>=1000:
+        myBlocks = self.byz.countMyBlocks()
+        if myBlocks > 10000:
             done = True
         elif secretHeight >= 10: #ok, so we ask for an action but we actually ignore it. Should this be moved to wittgenstein?
             self.byz.sendMinedBlocks(1)
@@ -57,22 +58,37 @@ class PoWEnv(gym.Env):
 
         distance = self.byz.getAdvance()
         secretHeight = self.byz.getSecretBlockSize()
-        self.state = (distance,secretHeight)
+        self.state = (distance, secretHeight)
         reward = self.getReward()
+        lastEthReward = self.byz.getReward(500)
 
         if done:
             eth_reward = self.byz.getReward()
             ratio = self.byz.getRewardRatio()
-            info = {"hp":self.slip, "msg":"last step","time":self.p.getTimeInSeconds(),"amount":eth_reward,"ratio":ratio}
+            info = {"hp":self.slip, "time":self.p.getTimeInSeconds(),"amount":eth_reward,"ratio":ratio}
         else:
-            info = {"hp":self.slip, "msg":"valid","time":self.p.getTimeInSeconds(),"amount":0}
+            info = {}
 
-        return np.array(self.state), reward, done, info
+        return np.array(self.state), self.p.getTimeInSeconds(), myBlocks, reward, lastEthReward, done, info
 
 # Should return 4 values, an Object, a float, boolean, dict
 
+
+
+    def getReward3(self):
+        if self.byz.getSecretBlockSize() > 0:
+            return 1.1
+        if self.byz.iAmAhead():
+            return 1
+        return -1
+
     def getReward(self):
-        if self.byz.iamAhead() is False:
+        if self.byz.iAmAhead():
+            return 1
+        return -1
+
+    def getReward1(self):
+        if self.byz.iAmAhead() is False:
             newCount = -1
         elif self.byz.getSecretBlockSize() > 0:
             newCount = 1.1
@@ -81,6 +97,7 @@ class PoWEnv(gym.Env):
         reward = newCount - self.old_count
         self.old_count = newCount
         return reward - 0.01
+
 
     def validAction(self, action,secretHeight):
         if secretHeight>= action:

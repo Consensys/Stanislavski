@@ -5,8 +5,8 @@ import numpy as np
 
 env = gym.make('pow-v0')
 
-lr_rate = 0.01
-gamma = 0.3
+lr_rate = 0.5
+gamma = 0.8
 
 Q = np.zeros((100, env.action_space.n))
 
@@ -37,25 +37,26 @@ def start(type_of_action):
         episode += 1
 
         epsilon = 0.001
-        if episode < 10000:
+        if episode < 2000:
             epsilon = 0.01
-        if episode < 5000:
+        if episode < 1000:
             epsilon = 0.05
-        if episode < 3000:
-            epsilon = 0.10
         if episode < 500:
-            epsilon = 0.2
+            epsilon = 0.10
         if episode < 200:
-            epsilon = 0.40
-        if episode % 100 == 0:
+            epsilon = 0.2
+        if episode < 100:
+            epsilon = 0.040
+        if episode % 50 == 0:
             epsilon = 0
         if episode % 55 == 0:
-            epsilon *= 2
+            epsilon *= 0.1
 
         state = env.reset()
         done = False
         total_payout = 0
         max_steps=0
+        lastPrintBlock = 0
         while done is False:
             #env.render()
             max_steps+=1
@@ -67,19 +68,21 @@ def start(type_of_action):
             else:
                 action, rd = choose_action(state,epsilon) 
             
-            state2, reward, done, info = env.step(action)
+            state2, time, myBlocks, reward, lastRewardEth, done, info = env.step(action)
 
-            if episode % 500 == 0:
-                print("action: ",action, rd)
-                print("STATE: ",state2)
-                print("----INFO---- ",info)
+            if episode % 500 == 0 and max_steps < 200:
+                print("STEP, time:", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth, "action: ",action, "random", rd, "new state", state2)
+
+            if myBlocks % 500 == 0 and lastPrintBlock != myBlocks:
+                print("BLOCKS, episode", episode, "time:", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth,"epsilon", epsilon, "alpha", lr_rate, "gamma", gamma)
+                lastPrintBlock = myBlocks
 
             learn(state, state2, reward, action, episode)
-            total_payout+=info['amount']
             state = state2
 
             if done:
-                print("REWARD RATIO: ",info['ratio']," epsilon ", epsilon, "episode", episode, "hp:", info['hp'], "alpha", lr_rate, "gamma", gamma)
+                print("REWARD RATIO:",info['ratio'],"epsilon", epsilon, "episode", episode, "hp:", info['hp'], "alpha", lr_rate, "gamma", gamma)
+                total_payout = info['amount']
 
         average_payouts.append(total_payout)
 
