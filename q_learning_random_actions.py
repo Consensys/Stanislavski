@@ -45,8 +45,8 @@ def start(type_of_action):
             epsilon = 0.10
         if episode < 200:
             epsilon = 0.2
-        if episode < 100:
-            epsilon = 0.040
+        if episode < 20:
+            epsilon = 0.40
         if episode % 50 == 0:
             epsilon = 0
         if episode % 55 == 0:
