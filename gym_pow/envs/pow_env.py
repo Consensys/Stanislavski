@@ -23,7 +23,7 @@ class PoWEnv(gym.Env):
             '''
             #represents number of blocks you can go forward into on the main chain
             self.max_unsent_blocks = 10
-            low = np.array([0, 0, 0])
+            low = np.array([0, 0, 1])
             high = np.array([self.max_unsent_blocks, self.max_unsent_blocks, 3])
             self.observation_space = spaces.Box(low, high, dtype=np.int32)
             self.action_space = spaces.Discrete(3)

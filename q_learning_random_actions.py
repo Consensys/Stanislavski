@@ -13,17 +13,18 @@ def choose_action(Q, state,_epsilon):
         # Filter invalid actions
         bestAction = 0 # do nothing, always valid
         bestScore = Q[state][0][0]
-        for i in range(1, env.action_space.n):
+        for i in range(1, env.action_space.n - 1):
             if state[1] >= i and Q[state][0][i] > bestScore:
                 bestAction = i
                 bestScore = Q[state][0][i]
         return bestAction, False
 
 def choose_random_action(state):
-    while True:
-        action = env.action_space.sample()
-        if state[1] >= action:
-            return action
+    for i in range(0, env.action_space.n-1):
+        if state[1] < i: return i - 1
+        if np.random.uniform(0, 1) < 0.5:
+            return i
+    return env.action_space.n - 1
 
 def choose_honest_action():
     return 1
@@ -34,23 +35,22 @@ def learn(cur_state, next_state, reward, action, Q, alpha, gamma):
     Q[cur_state, action] = Q[cur_state, action] + alpha * (target - predict)
 
 def start(type_of_action, lr_rate, gamma):
-    #Q = np.zeros((env.observation_space.n, env.action_space.n))
-    Q = np.zeros((100, env.action_space.n))
+    Q = np.zeros((10*10*3, env.action_space.n))
 
     average_payouts = []
     episode = 0
-    while episode < 300:
+    while episode < 500:
         episode += 1
 
-        epsilon = 0.01
-        if episode < 500:
-            epsilon = 0.10
-        if episode < 200:
-            epsilon = 0.40
+        epsilon = 0.1
+        if episode < 400:
+            epsilon = 0.5
         if episode < 100:
-            epsilon = 0.6
+            epsilon = 1
         if episode % 50 == 0:
             epsilon = 0
+        if episode % 15 == 0:
+            epsilon = 0.9
 
         state = env.reset()
         done = False
@@ -76,7 +76,7 @@ def start(type_of_action, lr_rate, gamma):
                 print("STEP, time", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth, "action",action, rds, "state",state, "->", state2)
 
             if myBlocks % 500 == 0 and lastPrintBlock != myBlocks:
-                print("BLOCKS, episode", episode, "time:", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth,"epsilon", epsilonUsed, "alpha", lr_rate, "gamma", gamma)
+                print("BLOCKS, episode", episode, "time:", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth,"epsilon", epsilonUsed, "alpha", lr_rate, "gamma", gamma, "state", state)
                 lastPrintBlock = myBlocks
 
             learn(state, state2, reward, action, Q, lr_rate, gamma)
@@ -101,8 +101,8 @@ def start(type_of_action, lr_rate, gamma):
     plt.xlabel()'''
 
 def main():
-    for alpha in [0.1, .05, 0.20, 0.30, 0.01]:
-        for gamma in [0.9, 0.60, 0.70, 0.8, 0.99, 0.999, 0.50]:
+    for alpha in [0.2, .4, 0.05]:
+        for gamma in [0.9, 0.70, 0.50, 0.99, 0.999]:
             start("agent", alpha, gamma)
 
 if __name__ == '__main__':
