@@ -5,12 +5,8 @@ import numpy as np
 
 env = gym.make('pow-v0')
 
-lr_rate = 0.05
-gamma = 0.99
 
-Q = np.zeros((100, env.action_space.n))
-
-def choose_action(state,_epsilon):
+def choose_action(Q, state,_epsilon):
     if np.random.uniform(0, 1) <_epsilon:
         return choose_random_action(state), True
     else:
@@ -30,23 +26,25 @@ def choose_random_action(state):
 def choose_honest_action():
     return 1
 
-def learn(state, state2, reward, action, episode):
+def learn(state, state2, reward, action, Q, lr_rate, gamma):
     predict = Q[state[0], action]
     '''if episode % 500 == 0:
         print("predicted value", predict)'''
     target = reward + gamma * np.max(Q[state2[0], :])
     Q[state[0], action] = Q[state[0], action] + lr_rate * (target - predict)
 
-def start(type_of_action):
+def start(type_of_action, lr_rate, gamma):
+    Q = np.zeros((100, env.action_space.n))
+
     average_payouts = []
     episode = 0
-    while True:
+    while episode < 300:
         episode += 1
 
         epsilon = 0.001
-        if episode < 1000:
+        if episode < 200:
             epsilon = 0.01
-        if episode < 500:
+        if episode < 100:
             epsilon = 0.05
         if episode < 50:
             epsilon = 0.10
@@ -57,7 +55,7 @@ def start(type_of_action):
         if episode % 50 == 0:
             epsilon = 0
         if episode % 55 == 0:
-            epsilon *= 0.1
+            epsilon = 0.1
 
         state = env.reset()
         done = False
@@ -73,7 +71,7 @@ def start(type_of_action):
             elif(type_of_action=="honest"):
                 action = choose_honest_action()
             else:
-                action, rd = choose_action(state,epsilon) 
+                action, rd = choose_action(Q, state,epsilon)
             
             state2, last_event, time, myBlocks, reward, lastRewardEth, done, info = env.step(action)
 
@@ -86,7 +84,7 @@ def start(type_of_action):
                 print("BLOCKS, episode", episode, "time:", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth,"epsilon", epsilon, "alpha", lr_rate, "gamma", gamma)
                 lastPrintBlock = myBlocks
 
-            learn(state, state2, reward, action, episode)
+            learn(state, state2, reward, action, Q, lr_rate, gamma)
             state = state2
 
             if done:
@@ -108,10 +106,9 @@ def start(type_of_action):
     plt.xlabel()'''
 
 def main():
-    '''start("random",1)
-    start("honest",1)'''
-    start("agent")
-
+    for alpha in [0.05, 0.20, 0.30, 0.01]:
+        for gamma in [0.60, 0.70, 0.80, 0.90, 0.99, 0.999, 0.50]:
+            start("agent", alpha, gamma)
 
 if __name__ == '__main__':
     main()
