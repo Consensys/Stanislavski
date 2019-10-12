@@ -43,20 +43,14 @@ def start(type_of_action, lr_rate, gamma):
         episode += 1
 
         epsilon = 0.01
-        if episode < 200:
-            epsilon = 0.05
-        if episode < 100:
+        if episode < 500:
             epsilon = 0.10
-        if episode < 50:
-            epsilon = 0.15
-        if episode < 10:
-            epsilon = 0.2
-        if episode < 5:
-            epsilon = 0.4
-        if episode % 2 == 0:
+        if episode < 200:
+            epsilon = 0.40
+        if episode < 100:
+            epsilon = 0.6
+        if episode % 50 == 0:
             epsilon = 0
-        if episode % 55 == 0:
-            epsilon = 0.1
 
         state = env.reset()
         done = False
@@ -107,7 +101,7 @@ def start(type_of_action, lr_rate, gamma):
     plt.xlabel()'''
 
 def main():
-    for alpha in [0.05, 0.20, 0.30, 0.01]:
+    for alpha in [0.1, .05, 0.20, 0.30, 0.01]:
         for gamma in [0.9, 0.60, 0.70, 0.8, 0.99, 0.999, 0.50]:
             start("agent", alpha, gamma)
 

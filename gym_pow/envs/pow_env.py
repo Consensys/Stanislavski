@@ -1,10 +1,10 @@
 ##Create your own environment https://github.com/openai/gym/blob/master/docs/creating-environments.md
-import random
-import numpy as np
 import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
 import jnius_config
+import numpy as np
+from gym import spaces
+from gym.utils import seeding
+
 jnius_config.set_classpath('.', './wittgenstein/wittgenstein-all.jar')
 from jnius import autoclass
 # Possible Observations miner, hashrate ratio, revenue ratio, revenue, uncle rate, total revenue, avg difficulty
@@ -23,10 +23,10 @@ class PoWEnv(gym.Env):
             '''
             #represents number of blocks you can go forward into on the main chain
             self.max_unsent_blocks = 10
-            self.low = np.array([0,self.max_unsent_blocks])
-            self.high = np.array([0, self.max_unsent_blocks])
-            self.observation_space = spaces.Box(self.low, self.high, dtype=np.int32)
-            self.last_event = 0
+            low = np.array([0, 0, 0])
+            high = np.array([self.max_unsent_blocks, self.max_unsent_blocks, 3])
+            self.observation_space = spaces.Box(low, high, dtype=np.int32)
+            self.action_space = spaces.Discrete(3)
             self.reset()
 
     def seed(self, seed):
@@ -104,7 +104,6 @@ class PoWEnv(gym.Env):
         return reward - 0.01
 
     def reset(self):
-        self.action_space = spaces.Discrete(3)
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
         self.byz = self.p.getByzNode()
