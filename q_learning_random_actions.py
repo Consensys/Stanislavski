@@ -1,5 +1,6 @@
 import gym
 #import matplotlib.pyplot as plt
+import gym_pow
 import numpy as np
 
 env = gym.make('pow-v0')
@@ -41,17 +42,17 @@ def start(type_of_action, lr_rate, gamma):
     while episode < 300:
         episode += 1
 
-        epsilon = 0.001
+        epsilon = 0.01
         if episode < 200:
-            epsilon = 0.01
-        if episode < 100:
             epsilon = 0.05
-        if episode < 50:
+        if episode < 100:
             epsilon = 0.10
+        if episode < 50:
+            epsilon = 0.15
         if episode < 10:
             epsilon = 0.2
         if episode < 5:
-            epsilon = 0.04
+            epsilon = 0.4
         if episode % 2 == 0:
             epsilon = 0
         if episode % 55 == 0:
