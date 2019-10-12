@@ -22,12 +22,11 @@ class PoWEnv(gym.Env):
                 if you have already 2 blocks in a secret chain and you mine a new one you will automatically publish
             '''
             #represents number of blocks you can go forward into on the main chain
-            self.min_distance = 0
-            self.max_distance = 10
-            self.max_secret_chain = 10
-            self.low = np.array([self.min_distance,self.max_distance ])
-            self.high = np.array([self.max_distance, self.max_secret_chain])
+            self.max_unsent_blocks = 10
+            self.low = np.array([0,self.max_unsent_blocks])
+            self.high = np.array([0, self.max_unsent_blocks])
             self.observation_space = spaces.Box(self.low, self.high, dtype=np.int32)
+            self.last_event = 0
             self.reset()
 
     def seed(self, seed):
@@ -35,32 +34,17 @@ class PoWEnv(gym.Env):
             return [seed]
 
     def step(self, action):
-
         assert self.action_space.contains(action)
 
-        self.byz.goNextStep()
-        secretHeight = self.byz.getSecretBlockSize()
+        # action == 0 means do nothing
+        if action > 0:
+            self.byz.sendMinedBlocks(action)
 
-        done = False
-        myBlocks = self.byz.countMyBlocks()
-        if myBlocks > 10000:
-            done = True
-        elif secretHeight >= 10: #ok, so we ask for an action but we actually ignore it. Should this be moved to wittgenstein?
-            self.byz.sendMinedBlocks(1)
-        elif action ==0:
-            self.byz.sendMinedBlocks(0)
-        elif action ==1:
-            self.byz.sendMinedBlocks(1)
-        elif action == 2:
-            self.byz.sendMinedBlocks(2)
-        elif action == 3:
-            self.byz.sendMinedBlocks(3)
-
-        distance = self.byz.getAdvance()
-        secretHeight = self.byz.getSecretBlockSize()
-        self.state = (distance, secretHeight)
         reward = self.getReward()
+
         lastEthReward = self.byz.getReward(500)
+        myBlocks = self.byz.countMyBlocks()
+        done = myBlocks > 10000
 
         if done:
             eth_reward = self.byz.getReward()
@@ -68,21 +52,42 @@ class PoWEnv(gym.Env):
             info = {"hp":self.slip, "time":self.p.getTimeInSeconds(),"amount":eth_reward,"ratio":ratio}
         else:
             info = {}
+            self.last_event = self.byz.goNextStep()
+            if self.byz.getSecretBlockSize() > self.max_unsent_blocks:
+                self.byz.sendMinedBlocks(1)
+            self.state = self.getState()
 
-        return np.array(self.state), self.p.getTimeInSeconds(), myBlocks, reward, lastEthReward, done, info
+        return np.array(self.state), self.last_event, self.p.getTimeInSeconds(), myBlocks, reward, lastEthReward, done, info
 
-# Should return 4 values, an Object, a float, boolean, dict
+    def getState(self):
+        distance = self.byz.getAdvance()
+        secretHeight = self.byz.getSecretBlockSize()
+        return (distance, secretHeight, self.last_event)
+
+    def getReward(self):
+        if self.byz.getAdvance() < self.byz.getSecretBlockSize():
+            # it's unfortunate, but it helps a lot. By doing this
+            #  we strongly hint that there is no reason to keep blocks
+            #  that are not useful anymore
+            return -10
+        if self.byz.iAmAhead():
+            return 1
+        return -1
 
 
-
-    def getReward3(self):
-        if self.byz.getSecretBlockSize() > 0:
+    def getReward4(self):
+        if self.byz.getAdvance() > 0:
             return 1.1
         if self.byz.iAmAhead():
             return 1
         return -1
 
-    def getReward(self):
+    def getReward3(self):
+        if self.byz.iAmAhead():
+            return 1 - self.slip
+        return -self.slip
+
+    def getReward2(self):
         if self.byz.iAmAhead():
             return 1
         return -1
@@ -98,19 +103,13 @@ class PoWEnv(gym.Env):
         self.old_count = newCount
         return reward - 0.01
 
-
-    def validAction(self, action,secretHeight):
-        if secretHeight>= action:
-            return True
-
-        return False
-
     def reset(self):
-        self.action_space = spaces.Discrete(4)
+        self.action_space = spaces.Discrete(3)
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
         self.p.init()
         self.byz = self.p.getByzNode()
-        self.state = np.array((0,0))
+        self.last_event = self.byz.goNextStep()
+        self.state = self.getState()
         self.old_count = 0
         self.seed(1)
         return np.array(self.state)

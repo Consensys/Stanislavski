@@ -5,20 +5,27 @@ import numpy as np
 
 env = gym.make('pow-v0')
 
-lr_rate = 0.5
-gamma = 0.8
+lr_rate = 0.05
+gamma = 0.99
 
 Q = np.zeros((100, env.action_space.n))
 
 def choose_action(state,_epsilon):
     if np.random.uniform(0, 1) <_epsilon:
-        return env.action_space.sample(), True
+        return choose_random_action(state), True
     else:
-        return np.argmax(Q[state[0], :]), False
+        # better: would be to remove the invalid actions from the Q[state[0], :]
+        action =  np.argmax(Q[state[0], :])
+        if state[1] >= action:
+            return action, False
+        else:
+            return choose_random_action(state), True
 
-def choose_random_action():
-    action = env.action_space.sample()
-    return action
+def choose_random_action(state):
+    while True:
+        action = env.action_space.sample()
+        if state[1] >= action:
+            return action
 
 def choose_honest_action():
     return 1
@@ -37,16 +44,16 @@ def start(type_of_action):
         episode += 1
 
         epsilon = 0.001
-        if episode < 2000:
-            epsilon = 0.01
         if episode < 1000:
-            epsilon = 0.05
+            epsilon = 0.01
         if episode < 500:
+            epsilon = 0.05
+        if episode < 50:
             epsilon = 0.10
-        if episode < 200:
+        if episode < 10:
             epsilon = 0.2
-        if episode < 20:
-            epsilon = 0.40
+        if episode < 5:
+            epsilon = 0.4
         if episode % 50 == 0:
             epsilon = 0
         if episode % 55 == 0:
@@ -68,10 +75,12 @@ def start(type_of_action):
             else:
                 action, rd = choose_action(state,epsilon) 
             
-            state2, time, myBlocks, reward, lastRewardEth, done, info = env.step(action)
+            state2, last_event, time, myBlocks, reward, lastRewardEth, done, info = env.step(action)
 
-            if episode % 500 == 0 and max_steps < 200:
-                print("STEP, time:", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth, "action: ",action, "random", rd, "new state", state2)
+            if epsilon == 0 and max_steps < 200:
+                rds = ""
+                if rd: rds = "(random)"
+                print("STEP, time", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth, "action",action, rds, "state",state, "->", state2)
 
             if myBlocks % 500 == 0 and lastPrintBlock != myBlocks:
                 print("BLOCKS, episode", episode, "time:", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth,"epsilon", epsilon, "alpha", lr_rate, "gamma", gamma)
