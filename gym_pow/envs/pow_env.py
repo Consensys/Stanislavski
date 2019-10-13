@@ -10,7 +10,7 @@ from jnius import autoclass
 # Possible Observations miner, hashrate ratio, revenue ratio, revenue, uncle rate, total revenue, avg difficulty
 
 class PoWEnv(gym.Env):   
-    def __init__(self, slip=.4):
+    def __init__(self, slip=.1):
             self.slip = slip  # probability of 'finding' a valid block
             '''Action Space represents the actions you can take go forwards on the main chain, 
             go to the side and create a fork, or do nothing
@@ -29,7 +29,7 @@ class PoWEnv(gym.Env):
             self.action_space = spaces.Discrete(3)
             self.reset()
 
-    def seed(self, seed):
+    def seed(self):
             self.np_random, seed = seeding.np_random()
             return [seed]
 
@@ -44,7 +44,7 @@ class PoWEnv(gym.Env):
 
         lastEthReward = self.byz.getReward(500)
         myBlocks = self.byz.countMyBlocks()
-        done = myBlocks > 10000
+        done = myBlocks > 10000 * self.slip
 
         if done:
             eth_reward = self.byz.getReward()
@@ -65,7 +65,7 @@ class PoWEnv(gym.Env):
     def getReward(self):
         if self.byz.iAmAhead():
             return 1
-        return -1
+        return -2
 
     def getReward4(self):
         if self.byz.getAdvance() > 0:
@@ -104,7 +104,7 @@ class PoWEnv(gym.Env):
         self.last_event = self.byz.goNextStep()
         self.state = self.getState()
         self.old_count = 0
-        self.seed(1)
+        self.seed()
         return np.array(self.state)
 
     def render(self):

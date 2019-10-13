@@ -13,13 +13,16 @@ def choose_action(Q, state,_epsilon):
     if np.random.uniform(0, 1) <_epsilon:
         return choose_random_action(state), True
     else:
+        # np.argmax(Q[state[0], :])
         # Filter invalid actions
         bestAction = 0 # do nothing, always valid
-        bestScore = Q[state][0][0]
-        for i in range(1, env.action_space.n - 1):
-            if state[1] >= i and Q[state][0][i] > bestScore:
-                bestAction = i
-                bestScore = Q[state][0][i]
+        bestScore =  Q[state][0][0]
+        for s in range(0, 2):
+            scores = Q[state][s]
+            for i in range(0, env.action_space.n - 1):
+                if state[1] >= i and scores[i] > bestScore:
+                    bestAction = i
+                    bestScore = scores[i]
         return bestAction, False
 
 def choose_random_action(state):
@@ -61,11 +64,11 @@ def start(type_of_action, lr_rate, gamma):
         state = env.reset()
         done = False
         total_payout = 0
-        staps = 0
+        steps = 0
         lastPrintBlock = 0
         while done is False:
             epsilonUsed = epsilon if lastPrintBlock < 9000 else 0
-            staps += 1
+            steps += 1
             rd = False
             if type_of_action == "random":
                 action = choose_random_action()
@@ -77,7 +80,7 @@ def start(type_of_action, lr_rate, gamma):
             #print (state)
             state2, last_event, time, myBlocks, reward, lastRewardEth, done, info = env.step(action)
 
-            if epsilon == 0 and staps < 200:
+            if epsilon == 0 and steps < 200:
                 rds = ""
                 if rd: rds = "(random)"
                 print("STEP, time", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth, "action",action, rds, "state",state, "->", state2)
