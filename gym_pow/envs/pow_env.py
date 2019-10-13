@@ -53,8 +53,6 @@ class PoWEnv(gym.Env):
         else:
             info = {}
             self.last_event = self.byz.goNextStep()
-            if self.byz.getSecretBlockSize() > self.max_unsent_blocks:
-                self.byz.sendMinedBlocks(1)
             self.state = self.getState()
 
         return np.array(self.state), self.last_event, self.p.getTimeInSeconds(), myBlocks, reward, lastEthReward, done, info
@@ -65,15 +63,9 @@ class PoWEnv(gym.Env):
         return (distance, secretHeight, self.last_event)
 
     def getReward(self):
-        if self.byz.getAdvance() < self.byz.getSecretBlockSize():
-            # it's unfortunate, but it helps a lot. By doing this
-            #  we strongly hint that there is no reason to keep blocks
-            #  that are not useful anymore
-            return -10
         if self.byz.iAmAhead():
             return 1
         return -1
-
 
     def getReward4(self):
         if self.byz.getAdvance() > 0:
@@ -88,6 +80,8 @@ class PoWEnv(gym.Env):
         return -self.slip
 
     def getReward2(self):
+        if self.byz.getAdvance() < self.byz.getSecretBlockSize():
+            return -10
         if self.byz.iAmAhead():
             return 1
         return -1

@@ -7,6 +7,9 @@ env = gym.make('pow-v0')
 
 
 def choose_action(Q, state,_epsilon):
+    # if we reach the maximum size for the queue, we force the action
+    #  so it does not overflow the maximum size we allocated
+    if state[1] > 10: return 1, False
     if np.random.uniform(0, 1) <_epsilon:
         return choose_random_action(state), True
     else:
@@ -20,7 +23,10 @@ def choose_action(Q, state,_epsilon):
         return bestAction, False
 
 def choose_random_action(state):
+    # 2 thirds of our actions are sending blocks, so to better explorate the space
+    #  we give a stronger weight to the 'do nothing' action
     for i in range(0, env.action_space.n-1):
+        # We select randomly only valid actions.
         if state[1] < i: return i - 1
         if np.random.uniform(0, 1) < 0.5:
             return i
@@ -43,13 +49,13 @@ def start(type_of_action, lr_rate, gamma):
         episode += 1
 
         epsilon = 0.1
-        if episode < 400:
-            epsilon = 0.5
         if episode < 100:
+            epsilon = 0.5
+        if episode < 10:
             epsilon = 1
-        if episode % 50 == 0:
+        if episode % 2 == 0:
             epsilon = 0
-        if episode % 15 == 0:
+        if episode % 9 == 0:
             epsilon = 0.9
 
         state = env.reset()
@@ -68,6 +74,7 @@ def start(type_of_action, lr_rate, gamma):
             else:
                 action, rd = choose_action(Q, state, epsilonUsed)
 
+            #print (state)
             state2, last_event, time, myBlocks, reward, lastRewardEth, done, info = env.step(action)
 
             if epsilon == 0 and staps < 200:
