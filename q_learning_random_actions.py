@@ -125,9 +125,9 @@ def start(type_of_action, slip, alpha, gamma):
     plt.xlabel()'''
 
 def main():
-    for alpha in [0.3, .4, 0.1]:
-        for gamma in [0.7, 0.70, 0.50, 0.99]:
-            for slip in [0.1, 0.4, 0.1]:
+    for alpha in [0.5,  0.3, .1, 0.05]:
+        for gamma in [0.99, 0.90, 0.70, 0.5]:
+            for slip in [0.6, 0.4, 0.1]:
                 start("agent", slip, alpha, gamma)
 
 if __name__ == '__main__':
