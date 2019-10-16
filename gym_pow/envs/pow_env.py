@@ -62,12 +62,19 @@ class PoWEnv(gym.Env):
         secretHeight = self.byz.getSecretBlockSize()
         return (distance, secretHeight, self.last_event)
 
-    def getReward1(self, done):
+
+    def getReward(self, done):
+        a = self.byz.getAdvance()
+        if a > 0:
+            return a
+        return self.byz.getTheyInRaw()
+
+    def getReward6(self, done):
         if done:
             return self.byz.getReward()
         return 0
 
-    def getReward(self, done):
+    def getReward5(self, done):
         return 1 if self.byz.iAmAhead() else -1
 
     def getReward4(self, done):

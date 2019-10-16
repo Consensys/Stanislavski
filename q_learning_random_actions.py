@@ -70,7 +70,10 @@ def printState(Q):
         s1 = [a, a, 1]
         s2 = [a, a, 2]
         s3 = [a, a, 3]
-        print (a, Q[s1][0], Q[s2][0], Q[s3][0])
+        a1 = np.argmax(Q[s1][0])
+        a2 = np.argmax(Q[s1][0])
+        a3 = np.argmax(Q[s1][0])
+        print (a, Q[s1][0], a1,  Q[s2][0], a2, Q[s3][0], a3)
 
 def start(type_of_action, slip, alpha, gamma):
     max_episode = 100
@@ -127,7 +130,7 @@ def start(type_of_action, slip, alpha, gamma):
 def main():
     for alpha in [0.5,  0.3, .1, 0.05]:
         for gamma in [0.99, 0.90, 0.70, 0.5]:
-            for slip in [0.6, 0.4, 0.1]:
+            for slip in [0.4, 0.4, 0.1]:
                 start("agent", slip, alpha, gamma)
 
 if __name__ == '__main__':
