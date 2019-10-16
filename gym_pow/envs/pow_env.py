@@ -10,28 +10,29 @@ from jnius import autoclass
 # Possible Observations miner, hashrate ratio, revenue ratio, revenue, uncle rate, total revenue, avg difficulty
 
 class PoWEnv(gym.Env):   
-    def __init__(self, slip=.1):
-            self.slip = slip  # probability of 'finding' a valid block
-            '''Action Space represents the actions you can take go forwards on the main chain, 
-            go to the side and create a fork, or do nothing
-            Actions
-                0 hold 1 block
-                1 publish 2 blocks in a row
-                2 publish 3 blocks in a row
-                3 add 1 block to private chain
-                if you have already 2 blocks in a secret chain and you mine a new one you will automatically publish
-            '''
-            #represents number of blocks you can go forward into on the main chain
-            self.max_unsent_blocks = 10
-            low = np.array([0, 0, 1])
-            high = np.array([self.max_unsent_blocks, self.max_unsent_blocks, 3])
-            self.observation_space = spaces.Box(low, high, dtype=np.int32)
-            self.action_space = spaces.Discrete(3)
-            self.reset()
+    def __init__(self):
+        self.slip = 0.4  # probability of 'finding' a valid block
+        '''Action Space represents the actions you can take go forwards on the main chain, 
+        go to the side and create a fork, or do nothing
+        Actions
+            0 hold 1 block
+            1 publish 2 blocks in a row
+            2 publish 3 blocks in a row
+            3 add 1 block to private chain
+            if you have already 2 blocks in a secret chain and you mine a new one you will automatically publish
+        '''
+        #represents number of blocks you can go forward into on the main chain
+        self.max_unsent_blocks = 10
+        low = np.array([0, 0, 1])
+        high = np.array([self.max_unsent_blocks, self.max_unsent_blocks, 3])
+        self.observation_space = spaces.Box(low, high, dtype=np.int32)
+        self.observation_space_size = 11 * 11 * 3
+        self.action_space = spaces.Discrete(3)
+        self.reset()
 
     def seed(self):
-            self.np_random, seed = seeding.np_random()
-            return [seed]
+        self.np_random, seed = seeding.np_random()
+        return [seed]
 
     def step(self, action):
         assert self.action_space.contains(action)
@@ -65,7 +66,7 @@ class PoWEnv(gym.Env):
     def getReward(self):
         if self.byz.iAmAhead():
             return 1
-        return -2
+        return -1
 
     def getReward4(self):
         if self.byz.getAdvance() > 0:
@@ -96,6 +97,10 @@ class PoWEnv(gym.Env):
         reward = newCount - self.old_count
         self.old_count = newCount
         return reward - 0.01
+
+    def resetSlip(self, _slip):
+        self.slip = _slip
+        self.reset()
 
     def reset(self):
         self.p = autoclass('net.consensys.wittgenstein.protocols.ethpow.ETHMinerAgent').create(self.slip)
