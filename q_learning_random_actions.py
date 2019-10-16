@@ -6,15 +6,14 @@ import numpy as np
 
 env = gym.make('pow-v0')
 
-def choose_action(Q, state,_epsilon):
+def choose_action(Q, state, epsilon):
     # if we reach the maximum size for the queue, we force the action
     #  so it does not overflow the maximum size we allocated
     if state[1] > 10: return 1, False
-    if np.random.uniform(0, 1) <_epsilon:
+    if epsilon > 0 and (epsilon < 1 or np.random.uniform(0, 1) < epsilon):
         return choose_random_action(state), True
     else:
-        # np.argmax(Q[state[0], :])
-        # Filter invalid actions
+        # We filter the invalid actions
         scores = Q[state][0]
         bestAction = 0 # do nothing, always valid
         bestScore =  scores[0]
@@ -25,7 +24,7 @@ def choose_action(Q, state,_epsilon):
         return bestAction, False
 
 def choose_random_action(state):
-    # 2 thirds of our actions are sending blocks, so to better explorate the space
+    # 2 thirds of our actions are sending blocks, so to better explore the space
     #  we give a stronger weight to the 'do nothing' action
     for i in range(0, env.action_space.n-1):
         # We select randomly only valid actions.
@@ -49,64 +48,69 @@ def learn(cur_state, next_state, reward, action, Q, alpha, gamma):
     # get the best valid choice for the new state
     next_action, _ = choose_action(Q, next_state, 0)
     actual = reward + gamma * Q[next_state][0][next_action]
-    Q[cur_state][0][action] += alpha * (actual - predict)
+    #print (next_action, next_state, reward, predict, actual)
+    Q[cur_state[0],action] += alpha * (actual - predict)
 
+def getEpsilon(max_episode, episode):
+    epsilon = 0.1
+    if episode < max_episode / 2:
+        epsilon = 0.3
+    if episode < max_episode / 4:
+        epsilon = 0.6
+    if episode < max_episode / 8:
+        epsilon = 0.9
+    if episode < 2:
+        epsilon = 1
+    if episode % 5  == 0:
+        epsilon = 0
+    return epsilon
+
+def printState(Q):
+    for a in range(1, 10):
+        s1 = [a, a, 1]
+        s2 = [a, a, 2]
+        s3 = [a, a, 3]
+        print (a, Q[s1][0], Q[s2][0], Q[s3][0])
 
 def start(type_of_action, slip, alpha, gamma):
+    max_episode = 100
+
     env.resetSlip(slip)
     Q = np.zeros((env.observation_space_size, env.action_space.n))
 
     average_payouts = []
-    episode = 0
-    while episode < 2:
-        episode += 1
-
-        epsilon = 0.1
-        if episode < 100:
-            epsilon = 0.5
-        if episode < 10:
-            epsilon = 1
-        if episode % 5 == 0:
-            epsilon = 0
-        if episode % 29 == 0:
-            epsilon = 0.9
-
+    for episode in range(1, max_episode):
         state = env.reset()
+
+        epsilon = 1 if type_of_action == "random" else getEpsilon(max_episode, episode)
         done = False
-        total_payout = 0
         steps = 0
         lastPrintBlock = 0
         while done is False:
-            epsilonUsed = epsilon if lastPrintBlock < 9000 else 0
             steps += 1
-            rd = False
-            if type_of_action == "random":
-                action = choose_random_action()
-            elif type_of_action == "honest":
-                action = choose_honest_action()
-            else:
-                action, rd = choose_action(Q, state, epsilonUsed)
 
-            #print (state)
-            state2, last_event, time, myBlocks, reward, lastRewardEth, done, info = env.step(action)
+            epsilonUsed = epsilon if lastPrintBlock < env.max_block * .9 else 0
+
+            action, rd = choose_action(Q, state, epsilonUsed)
+            new_state, last_event, time, myBlocks, reward, lastRewardEth, done, info = env.step(action)
 
             if epsilon == 0 and steps < 200:
-                rds = ""
-                if rd: rds = "(random)"
-                print("slip", env.slip, "STEP, time", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth, "action",action, rds, "state",state, "->", state2)
+                rds = "(random)" if rd else ""
+                print("slip", env.slip, "STEP, time", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth, "action",action, rds, "state",state, "->", new_state, Q[state][action])
 
             if myBlocks % 500 == 0 and lastPrintBlock != myBlocks:
                 print("slip", env.slip, "BLOCKS, episode", episode, "time:", time, "myBlocks", myBlocks, "lastRewardEth",lastRewardEth,"epsilon", epsilonUsed, "alpha", alpha, "gamma", gamma, "state", state)
                 lastPrintBlock = myBlocks
 
-            learn(state, state2, reward, action, Q, alpha, gamma)
-            state = state2
+            learn(state, new_state, reward, action, Q, alpha, gamma)
+            state = new_state
 
             if done:
                 print("slip", env.slip, "REWARD RATIO:",info['ratio'],"epsilon", epsilon, "episode", episode, "hp:", info['hp'], "alpha", alpha, "gamma", gamma)
+                if epsilon == 0:
+                    printState(Q)
                 total_payout = info['amount']
-
-        average_payouts.append(total_payout)
+                average_payouts.append(total_payout)
 
         '''if episode%1000==0 and False:
             print(Q)
@@ -121,9 +125,9 @@ def start(type_of_action, slip, alpha, gamma):
     plt.xlabel()'''
 
 def main():
-    for slip in [0.1, 0.4, 0.6]:
-        for alpha in [0.1, 0.2, .4, 0.05]:
-            for gamma in [0.9, 0.70, 0.50, 0.99, 0.999]:
+    for alpha in [0.3, .4, 0.1]:
+        for gamma in [0.7, 0.70, 0.50, 0.99]:
+            for slip in [0.1, 0.4, 0.1]:
                 start("agent", slip, alpha, gamma)
 
 if __name__ == '__main__':

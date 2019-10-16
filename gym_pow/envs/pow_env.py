@@ -12,6 +12,7 @@ from jnius import autoclass
 class PoWEnv(gym.Env):   
     def __init__(self):
         self.slip = 0.4  # probability of 'finding' a valid block
+        self.max_block = 0
         '''Action Space represents the actions you can take go forwards on the main chain, 
         go to the side and create a fork, or do nothing
         Actions
@@ -19,14 +20,13 @@ class PoWEnv(gym.Env):
             1 publish 2 blocks in a row
             2 publish 3 blocks in a row
             3 add 1 block to private chain
-            if you have already 2 blocks in a secret chain and you mine a new one you will automatically publish
         '''
         #represents number of blocks you can go forward into on the main chain
         self.max_unsent_blocks = 10
         low = np.array([0, 0, 1])
         high = np.array([self.max_unsent_blocks, self.max_unsent_blocks, 3])
         self.observation_space = spaces.Box(low, high, dtype=np.int32)
-        self.observation_space_size = 11 * 11 * 3
+        self.observation_space_size = (self.max_unsent_blocks + 1) * (self.max_unsent_blocks +1 ) * 3
         self.action_space = spaces.Discrete(3)
         self.reset()
 
@@ -41,11 +41,10 @@ class PoWEnv(gym.Env):
         if action > 0:
             self.byz.sendMinedBlocks(action)
 
-        reward = self.getReward()
-
         lastEthReward = self.byz.getReward(500)
         myBlocks = self.byz.countMyBlocks()
-        done = myBlocks > 10000 * self.slip
+        done = myBlocks >= self.max_block
+        reward = self.getReward(done)
 
         if done:
             eth_reward = self.byz.getReward()
@@ -63,31 +62,34 @@ class PoWEnv(gym.Env):
         secretHeight = self.byz.getSecretBlockSize()
         return (distance, secretHeight, self.last_event)
 
-    def getReward(self):
-        if self.byz.iAmAhead():
-            return 1
-        return -1
+    def getReward1(self, done):
+        if done:
+            return self.byz.getReward()
+        return 0
 
-    def getReward4(self):
+    def getReward(self, done):
+        return 1 if self.byz.iAmAhead() else -1
+
+    def getReward4(self, done):
         if self.byz.getAdvance() > 0:
             return 1.1
         if self.byz.iAmAhead():
             return 1
         return -1
 
-    def getReward3(self):
+    def getReward3(self, done):
         if self.byz.iAmAhead():
             return 1 - self.slip
         return -self.slip
 
-    def getReward2(self):
+    def getReward2(self, done):
         if self.byz.getAdvance() < self.byz.getSecretBlockSize():
             return -10
         if self.byz.iAmAhead():
             return 1
         return -1
 
-    def getReward1(self):
+    def getReward1(self, done):
         if self.byz.iAmAhead() is False:
             newCount = -1
         elif self.byz.getSecretBlockSize() > 0:
@@ -100,6 +102,7 @@ class PoWEnv(gym.Env):
 
     def resetSlip(self, _slip):
         self.slip = _slip
+        self.max_block = 20000 * self.slip
         self.reset()
 
     def reset(self):
@@ -114,18 +117,3 @@ class PoWEnv(gym.Env):
 
     def render(self):
         print('\n',self.byz.minedToSend)
-
-    def get_hashPower(self,x):
-        return self.p.avgDifficulty(k)
-
-    def get_height(self):
-        h = [self.MAX_HEIGHT -self.curr_step]
-        return h
-
-    def actionSpaceSample(self):
-        return np.random.choice(self.action_space)
-
-    def maxAction(self,Q,state,actions):
-        values = np.array(Q[state,a] for a in actions)
-        action = np.argmax(values)
-        return actions[action]
