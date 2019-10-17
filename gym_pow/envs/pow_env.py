@@ -24,7 +24,6 @@ class PoWEnv(gym.Env):
         low = np.array([0, 0, 1])
         high = np.array([self.max_unsent_blocks, self.max_unsent_blocks, 3])
         self.observation_space = spaces.Box(low, high, dtype=np.int32)
-        self.observation_space_size = (self.max_unsent_blocks + 1) * (self.max_unsent_blocks +1 ) * 3
         self.action_space = spaces.Discrete(3)
         self.seed()
         # define in reset:
